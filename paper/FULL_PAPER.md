@@ -1,10 +1,9 @@
 # SHIFT-GPU: Shift-Aware, Risk-Calibrated and Physics-Guided Learning for Reliable LLM Inference Hardware Selection
 
 **Target Journal:** *Sustainable Computing: Informatics and Systems* (Elsevier, Q1, ISSN: 2210-5379)  
-**Authors:**  
-**Jason Pandian**$^{1,*}$, **I. Kala**$^2$  
+**Author:**  
+**Jason Pandian**$^{1,*}$  
 $^1$ *Department of Information Technology, Nehru Institute of Technology, Coimbatore, Tamil Nadu, 641105, India*  
-$^2$ *Department of Computer Science and Engineering, PSG Institute of Technology and Applied Research, Coimbatore, Tamil Nadu, 641062, India*  
 $^*$ *Corresponding Author: pandiajason@gmail.com*  
 
 ---
@@ -288,14 +287,13 @@ Reliable hardware accelerator selection for LLM serving is a foundational proble
 
 ## CRediT Authorship Contribution Statement
 
-**Jason Pandian:** Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data Curation, Writing - Original Draft, Writing - Review & Editing, Visualization.  
-**I. Kala:** Supervision, Project administration, Resources, Funding acquisition, Writing - Review & Editing, Methodology validation.
+**Jason Pandian:** Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data Curation, Writing - Original Draft, Writing - Review & Editing, Visualization, Supervision, Project administration, Resources.
 
 ---
 
 ## Declaration of Competing Interest
 
-The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+The author declares that he has no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
 
 ---
 
@@ -308,8 +306,6 @@ All source code, trained model checkpoints, experiment configurations, and repro
 ## Author Biographies
 
 **Jason Pandian** received his B.E. degree in Computer Science and Engineering and M.E. degree in Information Technology. He is currently pursuing his Ph.D. degree in the Department of Information Technology at Nehru Institute of Technology, Coimbatore, Tamil Nadu, India. His research interests include distributed AI infrastructure, GPU computing, sustainable cloud data centers, deep learning performance modeling, and uncertainty quantification.
-
-**Dr. I. Kala** received her B.E., M.E., and Ph.D. degrees in Computer Science and Engineering. She is currently serving as an Associate Professor in the Department of Computer Science and Engineering at PSG Institute of Technology and Applied Research (PSG iTech), Coimbatore, Tamil Nadu, India. Her research interests encompass cloud computing, high-performance simulation systems, machine learning, and energy-aware distributed systems. She has published extensively in reputable international journals and conferences.
 
 ---
 
