@@ -1,4 +1,5 @@
-\documentclass[preprint,12pt,authoryear]{elsarticle}
+\documentclass[preprint,12pt]{elsarticle}
+\biboptions{numbers,sort&compress}
 
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
@@ -36,7 +37,7 @@
             country={India}}
 
 \begin{abstract}
-Selecting optimal hardware accelerators for Large Language Model (LLM) serving in heterogeneous cloud clusters is a critical operational problem in sustainable computing. In production data centers, exhaustive empirical profiling across combinations of models, batch sizes, and GPU generations is environmentally and financially prohibitive. While recent metadata-driven predictors offer zero-shot estimates of power draw and latency, existing models suffer catastrophic performance degradation when evaluating previously unseen GPU architectures, leading to severe Service Level Agreement (SLA) latency violations and inefficient energy consumption. To address this challenge, we introduce \textbf{SHIFT-GPU}, a principled computer science framework uniting physics-guided learning, distribution-shift detection, and decision-theoretic active adaptation. At the core of SHIFT-GPU is \textbf{PICAN} (\textit{Physics-Informed Cross-Attention Network}), a novel architecture that mathematically couples a deterministic microarchitectural Roofline latency lower bound ($T_{\text{roof}} = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}}\right)$) with a bipartite cross-attention representation space ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) and multiplicative exponential residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))$). To guarantee operational deployment reliability, SHIFT-GPU incorporates a group-covariate adjusted conformal prediction engine conditioned on microarchitectural Mahalanobis discrepancy, producing certified prediction intervals under out-of-distribution hardware shift. Furthermore, we develop \textbf{Regret-Optimal Active Acquisition (ROAA)}, a decision-theoretic profiling policy that strategically selects a minimal budget ($k \in \{1, 3, 5\}$) of hardware calibration measurements to minimize downstream deployment regret rather than passive statistical variance. Evaluated across 4,163 real-world experimental configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures (NVIDIA H200, H100 NVL, A100, A30, L40S, L4, V100, T4), SHIFT-GPU reduces unseen-hardware latency prediction error from 11.28\% to 6.12\%, reduces production SLA violations from 26.7\% to 2.1\%, and decreases hardware profiling overhead by over 95\% compared to exhaustive benchmarking sweeps.
+Selecting optimal hardware accelerators for Large Language Model (LLM) serving in heterogeneous cloud clusters is a critical operational problem in sustainable computing. In production data centers, exhaustive empirical profiling across models, batch sizes, and GPU generations is environmentally and financially prohibitive. While metadata-driven predictors estimate power draw and latency, existing models suffer severe performance degradation when evaluating unseen GPU architectures, causing Service Level Agreement (SLA) violations and excessive energy consumption. To resolve this, we present \textbf{SHIFT-GPU}, a framework uniting physics-guided learning, covariate-shift calibration, and decision-theoretic active adaptation. At its core is \textbf{PICAN} (\textit{Physics-Informed Cross-Attention Network}), which couples a deterministic microarchitectural Roofline latency bound with bipartite cross-attention ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) and multiplicative exponential residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))$). To guarantee deployment safety, SHIFT-GPU integrates group-covariate adjusted conformal prediction conditioned on microarchitectural Mahalanobis discrepancy, yielding certified prediction intervals under hardware shift. Furthermore, \textbf{Regret-Optimal Active Acquisition (ROAA)} strategically selects a minimal calibration budget ($k \in \{1, 3, 5\}$) to minimize downstream deployment regret rather than passive variance. Evaluated across 4,163 real-world configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures, SHIFT-GPU reduces unseen-hardware latency prediction error from 11.28\% to 6.12\%, reduces production SLA violations from 26.7\% to 2.1\%, and cuts profiling overhead by over 95\% compared to exhaustive sweeps.
 \end{abstract}
 
 %% Research highlights
@@ -49,7 +50,7 @@ Selecting optimal hardware accelerators for Large Language Model (LLM) serving i
 \end{highlights}
 
 \begin{keyword}
-Large Language Models \sep GPU Infrastructure \sep Physics-Informed Neural Networks \sep Conformal Prediction \sep Active Learning \sep Sustainable Computing \sep Hardware Selection.
+Large Language Models \sep GPU Infrastructure \sep Physics-Informed Neural Networks \sep Conformal Prediction \sep Active Learning \sep Sustainable Computing.
 \end{keyword}
 
 \end{frontmatter}
@@ -59,13 +60,13 @@ Large Language Models \sep GPU Infrastructure \sep Physics-Informed Neural Netwo
 \section{Introduction}
 \label{sec:intro}
 
-The exponential growth of generative artificial intelligence and Large Language Models (LLMs) has introduced unprecedented computational and environmental demands on cloud data center infrastructure \citep{strubell2019energy, patterson2021carbon}. In contemporary enterprise deployments, inference represents the dominant fraction of the total operational expenditure and carbon footprint over a model's operational lifecycle. Serving autoregressive transformer architectures requires maintaining strict Service Level Agreements (SLAs)—typically specified as an upper bound on mean Inter-Token Latency (ITL) or Time to First Token (TTFT)—while simultaneously minimizing total cluster energy consumption and power draw \citep{kwon2023vllm}.
+The exponential growth of generative artificial intelligence and Large Language Models (LLMs) has introduced unprecedented computational and environmental demands on cloud data center infrastructure \citep{strubell2019energy, patterson2021carbon}. In contemporary enterprise deployments, inference represents the dominant fraction of the total operational expenditure and carbon footprint over a model's operational lifecycle. Serving autoregressive transformer architectures requires maintaining strict Service Level Agreements (SLAs)---typically specified as an upper bound on mean Inter-Token Latency (ITL) or Time to First Token (TTFT)---while simultaneously minimizing total cluster energy consumption and power draw \citep{kwon2023vllm}.
 
 To optimize throughput per Watt, modern cloud providers deploy heterogeneous GPU clusters spanning multiple architectural generations, including NVIDIA Hopper (H100, H200), Ada Lovelace (L40S, L4), Ampere (A100, A30), Turing (T4), and Volta (V100). When an infrastructure operator seeks to deploy a new LLM workload, they must decide: \textit{Which GPU candidate satisfies the required latency SLA with the lowest operational power draw?} 
 
 Traditionally, answering this question requires exhaustive physical profiling: systematically deploying the LLM across every candidate accelerator under varying prompt lengths, concurrency arrival rates, and batch sizes. However, with dozens of active foundation models and hundreds of potential accelerator configurations, empirical profiling incurs massive energy consumption, creates severe scheduling overhead, and delays workload onboarding. 
 
-To bypass exhaustive profiling, recent work has explored metadata-based regression models. Notably, WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters (e.g., parameter counts, layer depths, attention heads) and static GPU specifications (e.g., memory bandwidth, TDP, peak TFLOPS) can predict inference power and latency. However, as demonstrated in our rigorous empirical baseline analysis, existing metadata models suffer from a fundamental failure mode: \textbf{microarchitectural covariate shift}. When evaluated in-distribution (standard 5-fold cross-validation), tree models achieve an impressive Median Absolute Percentage Error (MdAPE) of 2.84\% for latency and 2.45\% for power. Yet, when evaluated under Leave-One-GPU-Out (LOGO)—simulating the arrival of an unfamiliar hardware architecture—the prediction error surges by over 300\% to 11.28\% for latency and 10.26\% for power. 
+To bypass exhaustive profiling, recent work has explored metadata-based regression models. Notably, WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters (e.g., parameter counts, layer depths, attention heads) and static GPU specifications (e.g., memory bandwidth, TDP, peak TFLOPS) can predict inference power and latency. However, as demonstrated in our rigorous empirical baseline analysis, existing metadata models suffer from a fundamental failure mode: \textbf{microarchitectural covariate shift}. When evaluated in-distribution (standard 5-fold cross-validation), tree models achieve an impressive Median Absolute Percentage Error (MdAPE) of 2.84\% for latency and 2.45\% for power. Yet, when evaluated under Leave-One-GPU-Out (LOGO)---simulating the arrival of an unfamiliar hardware architecture---the prediction error surges by over 300\% to 11.28\% for latency and 10.26\% for power. 
 
 In a production scheduling environment, this degradation is catastrophic. Because point-estimate models lack calibrated uncertainty bounds and microarchitectural inductive biases, they frequently recommend under-provisioned GPUs that suffer massive SLA violations (e.g., 26.7\% violation rate in baseline deployments) or over-provisioned accelerators that waste substantial energy.
 
@@ -95,6 +96,9 @@ Autoregressive LLM inference consists of two distinct operational phases: the co
 
 \subsection{Conformal Prediction and Covariate Shift}
 Conformal prediction provides a distribution-free framework for constructing valid predictive intervals with finite-sample coverage guarantees \citep{angelopoulos2023conformal}. Standard inductive conformal prediction assumes exchangeability of calibration and test data ($P_{\text{train}} = P_{\text{test}}$). However, when evaluating an unseen accelerator architecture, this assumption is fundamentally violated due to hardware covariate shift. \citet{tibshirani2019conformal_covariate} established the theoretical foundations of weighted conformal prediction under covariate shift using likelihood ratio re-weighting. In SHIFT-GPU, we adapt these principles to the discrete topology of microarchitectural accelerator specifications using Mahalanobis discrepancy calibration.
+
+\subsection{Active Learning and Few-Shot Adaptation}
+Active learning aims to maximize predictive accuracy while minimizing the labeling or profiling budget \citep{settles2009active}. While pool-based active learning traditionally queries samples with maximal epistemic variance, such heuristics are sub-optimal for operational decisions with asymmetric loss functions. In SHIFT-GPU, we formulate Regret-Optimal Active Acquisition (ROAA) to query hardware configurations specifically situated near the critical SLA feasibility boundary.
 
 \section{Problem Formulation}
 \label{sec:formulation}
@@ -251,7 +255,7 @@ T_{\text{roof}}(x, g) = \max\left( \frac{2 \cdot N_{\text{params}}}{B_{\text{mem
 For power draw, the physical operational envelope is bounded from above by the manufacturer's Thermal Design Power ($TDP(g)$).
 
 \subsection{Component B: PICAN (Physics-Informed Cross-Attention Network)}
-To learn the complex non-linear residual dynamics—including kernel scheduling overheads, KV-cache indexing stalls, and memory channel contention—we design \textbf{PICAN}:
+To learn the complex non-linear residual dynamics---including kernel scheduling overheads, KV-cache indexing stalls, and memory channel contention---we design \textbf{PICAN}:
 
 \begin{enumerate}
     \item \textbf{Workload Encoder $E_W$:} Maps continuous workload parameters $x_{\text{cont}}$ and categorical embeddings (scenario, model architecture) to a dense workload latent state $w_x \in \mathbb{R}^d$:
@@ -592,7 +596,7 @@ All source code, trained model checkpoints, experiment configurations, and repro
 
 \noindent \textbf{Jason Pandian} received his B.E. degree in Computer Science and Engineering and M.E. degree in Information Technology. He is currently pursuing his Ph.D. degree in the Department of Information Technology at Nehru Institute of Technology, Coimbatore, Tamil Nadu, India. His research interests include distributed AI infrastructure, GPU computing, sustainable cloud data centers, deep learning performance modeling, and uncertainty quantification.
 
-\bibliographystyle{elsarticle-harv}
+\bibliographystyle{elsarticle-num}
 \bibliography{references}
 
 \end{document}

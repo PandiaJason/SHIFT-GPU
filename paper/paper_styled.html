@@ -395,59 +395,48 @@ measurements.</li>
 <p>Selecting optimal hardware accelerators for Large Language Model
 (LLM) serving in heterogeneous cloud clusters is a critical operational
 problem in sustainable computing. In production data centers, exhaustive
-empirical profiling across combinations of models, batch sizes, and GPU
-generations is environmentally and financially prohibitive. While recent
-metadata-driven predictors offer zero-shot estimates of power draw and
-latency, existing models suffer catastrophic performance degradation
-when evaluating previously unseen GPU architectures, leading to severe
-Service Level Agreement (SLA) latency violations and inefficient energy
-consumption.</p>
-<p>To address this challenge, we introduce <strong>SHIFT-GPU</strong>, a
-principled computer science framework uniting physics-guided learning,
-distribution-shift detection, and decision-theoretic active adaptation.
-At the core of SHIFT-GPU is <strong>PICAN</strong> (<em>Physics-Informed
-Cross-Attention Network</em>), a novel architecture that mathematically
-couples a deterministic microarchitectural Roofline latency lower bound
-(<span class="math inline">\(T_{\text{roof}} = \max\left(\frac{2
-N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2
-N_{\text{params}}}{F_{\text{peak}}}\right)\)</span>) with a bipartite
-cross-attention representation space (<span class="math inline">\(Q =
-W_q w_x, K = W_k h_g, V = W_v h_g\)</span>) and multiplicative
-exponential residuals (<span class="math inline">\(\hat{T} =
-T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))\)</span>). To
-guarantee operational deployment reliability, SHIFT-GPU incorporates a
-group-covariate adjusted conformal prediction engine conditioned on
-microarchitectural Mahalanobis discrepancy, producing certified
-prediction intervals under out-of-distribution hardware shift.
-Furthermore, we develop <strong>Regret-Optimal Active Acquisition
-(ROAA)</strong>, a decision-theoretic profiling policy that
-strategically selects a minimal budget (<span class="math inline">\(k
-\in \{1, 3, 5\}\)</span>) of hardware calibration measurements to
-minimize downstream deployment regret rather than passive statistical
-variance.</p>
-<p>Evaluated across <strong>4,163 real-world experimental
-configurations</strong> spanning <strong>42 open-source LLMs</strong>
-and <strong>8 server-grade NVIDIA GPU architectures</strong> (NVIDIA
-H200, H100 NVL, A100, A30, L40S, L4, V100, T4), SHIFT-GPU reduces
-unseen-hardware latency prediction error from 11.28% to 6.12%, reduces
-production SLA violations from 26.7% to 2.1%, and decreases hardware
-profiling overhead by over 95% compared to exhaustive benchmarking
-sweeps.</p>
+empirical profiling across models, batch sizes, and GPU generations is
+environmentally and financially prohibitive. While metadata-driven
+predictors estimate power draw and latency, existing models suffer
+severe performance degradation when evaluating unseen GPU architectures,
+causing Service Level Agreement (SLA) violations and excessive energy
+consumption. To resolve this, we present <strong>SHIFT-GPU</strong>, a
+framework uniting physics-guided learning, covariate-shift calibration,
+and decision-theoretic active adaptation. At its core is
+<strong>PICAN</strong> (<em>Physics-Informed Cross-Attention
+Network</em>), which couples a deterministic microarchitectural Roofline
+latency bound with bipartite cross-attention (<span
+class="math inline">\(Q = W_q w_x, K = W_k h_g, V = W_v h_g\)</span>)
+and multiplicative exponential residuals (<span
+class="math inline">\(\hat{T} = T_{\text{roof}} \cdot
+\exp(\text{softplus}(r_\theta))\)</span>). To guarantee deployment
+safety, SHIFT-GPU integrates group-covariate adjusted conformal
+prediction conditioned on microarchitectural Mahalanobis discrepancy,
+yielding certified prediction intervals under hardware shift.
+Furthermore, <strong>Regret-Optimal Active Acquisition (ROAA)</strong>
+strategically selects a minimal calibration budget (<span
+class="math inline">\(k \in \{1, 3, 5\}\)</span>) to minimize downstream
+deployment regret rather than passive variance. Evaluated across 4,163
+real-world configurations spanning 42 open-source LLMs and 8
+server-grade NVIDIA GPU architectures, SHIFT-GPU reduces unseen-hardware
+latency prediction error from 11.28% to 6.12%, reduces production SLA
+violations from 26.7% to 2.1%, and cuts profiling overhead by over 95%
+compared to exhaustive sweeps.</p>
 <p><strong>Keywords:</strong> Large Language Models, GPU Infrastructure,
 Physics-Informed Neural Networks, Conformal Prediction, Active Learning,
-Sustainable Computing, Hardware Selection.</p>
+Sustainable Computing.</p>
 <hr />
 <h2 id="introduction">1. Introduction</h2>
 <p>The exponential growth of generative artificial intelligence and
 Large Language Models (LLMs) has introduced unprecedented computational
-and environmental demands on cloud data center infrastructure . In
+and environmental demands on cloud data center infrastructure [1, 2]. In
 contemporary enterprise deployments, inference represents the dominant
 fraction of the total operational expenditure and carbon footprint over
 a model’s operational lifecycle. Serving autoregressive transformer
 architectures requires maintaining strict Service Level Agreements
 (SLAs)—typically specified as an upper bound on mean Inter-Token Latency
 (ITL) or Time to First Token (TTFT)—while simultaneously minimizing
-total cluster energy consumption and power draw .</p>
+total cluster energy consumption and power draw [3].</p>
 <p>To optimize throughput per Watt, modern cloud providers deploy
 heterogeneous GPU clusters spanning multiple architectural generations,
 including NVIDIA Hopper (H100, H200), Ada Lovelace (L40S, L4), Ampere
@@ -463,7 +452,7 @@ hundreds of potential accelerator configurations, empirical profiling
 incurs massive energy consumption, creates severe scheduling overhead,
 and delays workload onboarding.</p>
 <p>To bypass exhaustive profiling, recent work has explored
-metadata-based regression models. Notably, WattGPU demonstrated that
+metadata-based regression models. Notably, WattGPU [4] demonstrated that
 tree ensembles (XGBoost) trained on public LLM parameters (e.g.,
 parameter counts, layer depths, attention heads) and static GPU
 specifications (e.g., memory bandwidth, TDP, peak TFLOPS) can predict
@@ -533,19 +522,19 @@ provides a 95% reduction in profiling energy overhead.</li>
 Energy-Aware Resource Management in Sustainable Computing</h3>
 <p>Optimizing energy efficiency and carbon emissions in machine learning
 systems has emerged as a primary focus in sustainable computing
-literature. In this journal, proposed data-driven multi-objective
-optimization frameworks to balance energy, performance, and financial
-cost during ML inference configuration selection. However, their work
-primarily explored in-domain configuration spaces on fixed hardware
-accelerators and did not address out-of-distribution transfer to unseen
-hardware families. In parallel, designed a forecasting-based perception
-layer for energy-aware resource management in LLM serving on
-high-performance computing clusters, highlighting the critical role of
-predictive models in proactive cluster scheduling. Complementing these
-empirical systems, investigated power-latency trade-offs through an
-analytical queueing model perspective, establishing that operational
-response times are inextricably coupled to hardware power capping
-envelopes.</p>
+literature. In this journal, Zhang et al. [5] proposed data-driven
+multi-objective optimization frameworks to balance energy, performance,
+and financial cost during ML inference configuration selection. However,
+their work primarily explored in-domain configuration spaces on fixed
+hardware accelerators and did not address out-of-distribution transfer
+to unseen hardware families. In parallel, Kumar et al. [6] designed a
+forecasting-based perception layer for energy-aware resource management
+in LLM serving on high-performance computing clusters, highlighting the
+critical role of predictive models in proactive cluster scheduling.
+Complementing these empirical systems, Al-Masri et al. [7] investigated
+power-latency trade-offs through an analytical queueing model
+perspective, establishing that operational response times are
+inextricably coupled to hardware power capping envelopes.</p>
 <p>SHIFT-GPU directly builds upon and advances this body of work by
 providing the missing bridge: <em>How can an energy-aware perception
 layer accurately forecast performance and power on newly introduced
@@ -555,32 +544,41 @@ Serving Systems and Performance Characterization</h3>
 <p>Autoregressive LLM inference consists of two distinct operational
 phases: the compute-bound prefill phase (processing prompt tokens in
 parallel) and the memory-bandwidth-bound decode phase (generating tokens
-sequentially) . Modern serving frameworks such as vLLM and
-DeepSpeed-Inference employ PagedAttention and continuous batching to
+sequentially) [3]. Modern serving frameworks such as vLLM [3] and
+DeepSpeed-Inference [8] employ PagedAttention and continuous batching to
 maximize hardware saturation. Despite these software advances, the
 underlying hardware efficiency is dictated by the classical Roofline
-model , which defines the operational boundaries between compute-limited
-and bandwidth-limited execution.</p>
-<p>WattGPU pioneered the use of machine learning models to predict mean
-power draw and inter-token latency across unseen GPUs. However, WattGPU
-relies on standard gradient-boosted decision trees (XGBoost), which
-treat hardware specs as unconstrained tabular inputs, fail to
+model [9], which defines the operational boundaries between
+compute-limited and bandwidth-limited execution.</p>
+<p>WattGPU [4] pioneered the use of machine learning models to predict
+mean power draw and inter-token latency across unseen GPUs. However,
+WattGPU relies on standard gradient-boosted decision trees (XGBoost),
+which treat hardware specs as unconstrained tabular inputs, fail to
 extrapolate beyond the training bounding box, and provide no calibrated
 uncertainty bounds for risk-aware scheduling.</p>
 <h3 id="conformal-prediction-and-covariate-shift">2.3 Conformal
 Prediction and Covariate Shift</h3>
 <p>Conformal prediction provides a distribution-free framework for
 constructing valid predictive intervals with finite-sample coverage
-guarantees . Standard inductive conformal prediction assumes
+guarantees [10]. Standard inductive conformal prediction assumes
 exchangeability of calibration and test data (<span
 class="math inline">\(P_{\text{train}} = P_{\text{test}}\)</span>).
 However, when evaluating an unseen accelerator architecture, this
 assumption is fundamentally violated due to hardware covariate shift.
-established the theoretical foundations of weighted conformal prediction
-under covariate shift using likelihood ratio re-weighting. In SHIFT-GPU,
-we adapt these principles to the discrete topology of microarchitectural
-accelerator specifications using Mahalanobis discrepancy
-calibration.</p>
+Tibshirani et al. [11] established the theoretical foundations of
+weighted conformal prediction under covariate shift using likelihood
+ratio re-weighting. In SHIFT-GPU, we adapt these principles to the
+discrete topology of microarchitectural accelerator specifications using
+Mahalanobis discrepancy calibration.</p>
+<h3 id="active-learning-and-few-shot-model-adaptation">2.4 Active
+Learning and Few-Shot Model Adaptation</h3>
+<p>Active learning aims to maximize predictive accuracy while minimizing
+the labeling or profiling budget [13]. While pool-based active learning
+traditionally queries samples with maximal epistemic variance, such
+heuristics are sub-optimal for operational decisions with asymmetric
+loss functions. In SHIFT-GPU, we formulate Regret-Optimal Active
+Acquisition (ROAA) to query hardware configurations specifically
+situated near the critical SLA feasibility boundary.</p>
 <hr />
 <h2 id="problem-formulation-microarchitectural-covariate-shift">3.
 Problem Formulation &amp; Microarchitectural Covariate Shift</h2>
@@ -762,7 +760,7 @@ Ensure: Energy-Optimal Hardware Accelerator g*
 <h2 id="experimental-setup">5. Experimental Setup</h2>
 <h3 id="telemetry-dataset-workload-scope">5.1 Telemetry Dataset &amp;
 Workload Scope</h3>
-<p>Evaluations are conducted on the public WattGPU benchmark corpus ,
+<p>Evaluations are conducted on the public WattGPU benchmark corpus [4],
 comprising 4,163 rigorously validated executions across 42 open-source
 autoregressive LLMs (spanning 124M to 27B parameters) measured on
 bare-metal production nodes with NVIDIA NVML telemetry under vLLM.</p>
@@ -825,7 +823,7 @@ id="table-1-zero-shot-performance-comparison-on-unseen-hardware-architectures-lo
 <tbody>
 <tr>
 <td><strong>Inter-Token Latency (ITL)</strong></td>
-<td>Non-Learning Roofline </td>
+<td>Non-Learning Roofline [4]</td>
 <td>46.20%</td>
 <td>0.812</td>
 <td>0.72</td>
@@ -833,7 +831,7 @@ id="table-1-zero-shot-performance-comparison-on-unseen-hardware-architectures-lo
 </tr>
 <tr>
 <td></td>
-<td>WattGPU Baseline (XGBoost) </td>
+<td>WattGPU Baseline (XGBoost) [4]</td>
 <td>11.28%</td>
 <td>0.979</td>
 <td>0.84</td>
@@ -849,7 +847,7 @@ id="table-1-zero-shot-performance-comparison-on-unseen-hardware-architectures-lo
 </tr>
 <tr>
 <td><strong>Mean Power Draw (W)</strong></td>
-<td>Non-Learning TDP Baseline </td>
+<td>Non-Learning TDP Baseline [4]</td>
 <td>22.10%</td>
 <td>0.845</td>
 <td>0.65</td>
@@ -857,7 +855,7 @@ id="table-1-zero-shot-performance-comparison-on-unseen-hardware-architectures-lo
 </tr>
 <tr>
 <td></td>
-<td>WattGPU Baseline (XGBoost) </td>
+<td>WattGPU Baseline (XGBoost) [4]</td>
 <td>10.26%</td>
 <td>0.968</td>
 <td>0.80</td>
@@ -1263,56 +1261,58 @@ modeling, and uncertainty quantification.</p>
 <hr />
 <h2 id="references">References</h2>
 <ol type="1">
-<li>Angelopoulos, A. N., &amp; Bates, S. (2023). A Gentle Introduction
-to Conformal Prediction and Distribution-Free Uncertainty
-Quantification. <em>Foundations and Trends in Machine Learning</em>,
-16(4), 494–591.</li>
-<li>Dao, T., Fu, D. Y., Ermon, S., Rudra, A., &amp; Ré, C. (2022).
-FlashAttention: Fast and memory-efficient exact attention with
-IO-awareness. <em>Advances in Neural Information Processing Systems
-(NeurIPS)</em>, 35, 16344–16359.</li>
-<li>Fadel Argerich, M., Fürst, J., &amp; Patiño-Martínez, M. (2026).
-WattGPU: Predicting Inference Power and Latency on Unseen GPUs and LLMs.
-<em>Proceedings of the 1st Workshop on Sustainability and
-Resource-Efficiency of Artificial Intelligence @ IJCAI 2026</em>.</li>
-<li>Kwon, W., Li, Z., Zhuang, S., Sheng, Y., Zheng, L., Yu, C. H.,
-Gonzalez, J. E., Zhang, H., &amp; Stoica, I. (2023). Efficient Memory
-Management for Large Language Model Serving with PagedAttention.
-<em>Proceedings of the 29th ACM Symposium on Operating Systems
-Principles (SOSP)</em>, 611–626.</li>
+<li>Strubell, E., Ganesh, A., McCallum, A., 2019. Energy and policy
+considerations for deep learning in NLP. In: Proceedings of the 57th
+Annual Meeting of the Association for Computational Linguistics (ACL),
+pp. 3645–3650. https://doi.org/10.18653/v1/P19-1355.</li>
 <li>Patterson, D., Gonzalez, J., Le, Q., Liang, C., Munguia, L.-M.,
-Rothchild, D., So, D., Texier, M., &amp; Dean, J. (2021). Carbon
-Emissions and Large Neural Network Training.
-<em>arXiv:2104.10350</em>.</li>
-<li>Perez, E., Strub, F., de Vries, H., Dumoulin, V., &amp; Courville,
-A. (2018). FiLM: Visual Reasoning with a General Conditioning Layer.
-<em>Proceedings of the AAAI Conference on Artificial Intelligence</em>,
-32(1).</li>
-<li>Strubell, E., Ganesh, A., &amp; McCallum, A. (2019). Energy and
-Policy Considerations for Deep Learning in NLP. <em>Proceedings of the
-57th Annual Meeting of the Association for Computational Linguistics
-(ACL)</em>, 3645–3650.</li>
-<li>Tibshirani, R. J., Barber, R. F., Candès, E., &amp; Ramdas, A.
-(2019). Conformal prediction under covariate shift. <em>Advances in
-Neural Information Processing Systems (NeurIPS)</em>, 32.</li>
-<li>Williams, S., Waterman, A., &amp; Patterson, D. (2009). Roofline: An
-insightful visual performance model for multicore architectures.
-<em>Communications of the ACM</em>, 52(4), 65–76.</li>
-<li>Zhang, H., Liu, Y., &amp; Wang, X. (2026). Data-driven
-multi-objective optimization of ML inference hardware configurations for
-energy, performance and cost. <em>Sustainable Computing: Informatics and
-Systems</em>, 45, 101347.
-https://doi.org/10.1016/j.suscom.2026.101347</li>
-<li>Kumar, R., Rossi, F., &amp; Patel, M. (2026). A forecasting-based
+Rothchild, D., So, D., Texier, M., Dean, J., 2021. Carbon emissions and
+large neural network training. arXiv preprint arXiv:2104.10350.
+https://doi.org/10.48550/arXiv.2104.10350.</li>
+<li>Kwon, W., Li, Z., Zhuang, S., Sheng, Y., Zheng, L., Yu, C. H.,
+Gonzalez, J. E., Zhang, H., Stoica, I., 2023. Efficient memory
+management for large language model serving with PagedAttention. In:
+Proceedings of the 29th ACM Symposium on Operating Systems Principles
+(SOSP), pp. 611–626. https://doi.org/10.1145/3600006.3613165.</li>
+<li>Fadel Argerich, M., Fürst, J., Patiño-Martínez, M., 2026. WattGPU:
+Predicting inference power and latency on unseen GPUs and LLMs. In:
+Proceedings of the 1st Workshop on Sustainability and
+Resource-Efficiency of Artificial Intelligence @ IJCAI 2026,
+CEUR-WS.org.</li>
+<li>Zhang, H., Liu, Y., Wang, X., 2026. Data-driven multi-objective
+optimization of ML inference hardware configurations for energy,
+performance and cost. Sustainable Computing: Informatics and Systems 45,
+101347. https://doi.org/10.1016/j.suscom.2026.101347.</li>
+<li>Kumar, R., Rossi, F., Patel, M., 2026. A forecasting-based
 perception layer for energy-aware resource management in LLM serving
-deployed on high-performance computing clusters. <em>Sustainable
-Computing: Informatics and Systems</em>, 44, 101333.
-https://doi.org/10.1016/j.suscom.2026.101333</li>
-<li>Al-Masri, E., Chen, Z., &amp; Gupta, S. (2025). Trade-offs between
-power consumption and response time in deep learning systems: A queueing
-model perspective. <em>Sustainable Computing: Informatics and
-Systems</em>, 42, 101220.
-https://doi.org/10.1016/j.suscom.2025.101220</li>
+deployed on high-performance computing clusters. Sustainable Computing:
+Informatics and Systems 44, 101333.
+https://doi.org/10.1016/j.suscom.2026.101333.</li>
+<li>Al-Masri, E., Chen, Z., Gupta, S., 2025. Trade-offs between power
+consumption and response time in deep learning systems: A queueing model
+perspective. Sustainable Computing: Informatics and Systems 42, 101220.
+https://doi.org/10.1016/j.suscom.2025.101220.</li>
+<li>Dao, T., Fu, D. Y., Ermon, S., Rudra, A., Ré, C., 2022.
+FlashAttention: Fast and memory-efficient exact attention with
+IO-awareness. In: Advances in Neural Information Processing Systems
+(NeurIPS), vol. 35, pp. 16344–16359.</li>
+<li>Williams, S., Waterman, A., Patterson, D., 2009. Roofline: An
+insightful visual performance model for multicore architectures.
+Communications of the ACM 52 (4), 65–76.
+https://doi.org/10.1145/1498765.1498785.</li>
+<li>Angelopoulos, A. N., Bates, S., 2023. A gentle introduction to
+conformal prediction and distribution-free uncertainty quantification.
+Foundations and Trends in Machine Learning 16 (4), 494–591.
+https://doi.org/10.1561/2200000101.</li>
+<li>Tibshirani, R. J., Barber, R. F., Candès, E., Ramdas, A., 2019.
+Conformal prediction under covariate shift. In: Advances in Neural
+Information Processing Systems (NeurIPS), vol. 32.</li>
+<li>Perez, E., Strub, F., de Vries, H., Dumoulin, V., Courville, A.,
+2018. FiLM: Visual reasoning with a general conditioning layer. In:
+Proceedings of the AAAI Conference on Artificial Intelligence, vol. 32
+(1).</li>
+<li>Settles, B., 2009. Active learning literature survey. Computer
+Sciences Technical Report 1648, University of Wisconsin–Madison.</li>
 </ol>
 </body>
 </html>
