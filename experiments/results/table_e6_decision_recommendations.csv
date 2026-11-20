@@ -1,0 +1,5 @@
+policy,violation_rate_pct,mean_power_watts,mean_regret,abstain_rate_pct,total_workloads,serviced_workloads
+point_estimate,1.6,199.30282691110037,108.25523729364421,0.0,125,125
+risk_calibrated,0.0,209.75788728302717,113.32961964392359,15.2,125,106
+min_tdp,6.4,108.29053899541546,37.53706583588555,0.0,125,125
+oracle,0.0,103.41332480135577,0.0,0.0,125,125

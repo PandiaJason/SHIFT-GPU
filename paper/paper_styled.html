@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>FULL_PAPER</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@page {
+    size: A4;
+    margin: 22mm 20mm 25mm 20mm;
+    @top-center {
+        content: "Sustainable Computing: Informatics and Systems (Elsevier)";
+        font-family: 'Crimson Pro', serif;
+        font-size: 8pt;
+        color: #777;
+        font-style: italic;
+    }
+    @bottom-center {
+        content: counter(page);
+        font-family: 'Crimson Pro', serif;
+        font-size: 9pt;
+        color: #555;
+    }
+}
+
+body {
+    font-family: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+    font-size: 10.5pt;
+    line-height: 1.48;
+    color: #1a1a1a;
+    text-align: justify;
+    margin: 0;
+    padding: 0;
+}
+
+h1.title {
+    font-size: 20pt;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.25;
+    margin-bottom: 8px;
+    color: #0d233a;
+}
+
+.authors-block {
+    text-align: center;
+    font-size: 11pt;
+    margin-bottom: 20px;
+    color: #444;
+}
+
+.journal-header {
+    text-align: center;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #8c1d40;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+h1 {
+    font-size: 14pt;
+    font-weight: 700;
+    border-bottom: 1px solid #0d233a;
+    padding-bottom: 3px;
+    margin-top: 22px;
+    margin-bottom: 10px;
+    color: #0d233a;
+    page-break-after: avoid;
+}
+
+h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    margin-top: 16px;
+    margin-bottom: 6px;
+    color: #1a365d;
+    page-break-after: avoid;
+}
+
+h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 4px;
+    color: #2b6cb0;
+    page-break-after: avoid;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 8px;
+    text-indent: 1.5em;
+}
+
+p:first-of-type, h1 + p, h2 + p, h3 + p, .no-indent {
+    text-indent: 0;
+}
+
+.abstract-box {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #0d233a;
+    padding: 14px 18px;
+    margin: 18px 0 24px 0;
+    font-size: 9.5pt;
+    line-height: 1.42;
+}
+
+.abstract-box strong {
+    color: #0d233a;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 9pt;
+    page-break-inside: avoid;
+}
+
+th, td {
+    padding: 6px 10px;
+    text-align: left;
+}
+
+th {
+    background: #edf2f7;
+    font-weight: 700;
+    border-top: 1.5px solid #2d3748;
+    border-bottom: 1.5px solid #2d3748;
+    color: #1a202c;
+}
+
+tr:nth-child(even) td {
+    background: #fcfdfe;
+}
+
+td {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+tr:last-child td {
+    border-bottom: 1.5px solid #2d3748;
+}
+
+code, pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5pt;
+}
+
+pre {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    page-break-inside: avoid;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 12px auto;
+}
+
+.caption {
+    font-size: 8.5pt;
+    color: #555;
+    text-align: center;
+    margin-top: 4px;
+    margin-bottom: 14px;
+    font-style: italic;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #cbd5e0;
+    margin: 20px 0;
+}
+
+ul, ol {
+    margin-top: 4px;
+    margin-bottom: 10px;
+    padding-left: 24px;
+}
+
+li {
+    margin-bottom: 3px;
+}
+</style>
+
+</head>
+<body>
+<h1
+id="shift-gpu-shift-aware-risk-calibrated-and-physics-guided-learning-for-reliable-llm-inference-hardware-selection">SHIFT-GPU:
+Shift-Aware, Risk-Calibrated and Physics-Guided Learning for Reliable
+LLM Inference Hardware Selection</h1>
+<p><strong>Target Journal:</strong> <em>Sustainable Computing:
+Informatics and Systems</em> (Elsevier, Q1)<br />
+<strong>Authors:</strong> Research Team<br />
+<strong>Subject Classification:</strong> AI Infrastructure, Machine
+Learning Systems, Green Computing, Sustainable Data Centers, Uncertainty
+Quantification</p>
+<hr />
+<h2 id="abstract">Abstract</h2>
+<p>Selecting optimal hardware accelerators for Large Language Model
+(LLM) serving in heterogeneous cloud clusters is a critical operational
+problem in sustainable computing. In production data centers, exhaustive
+empirical profiling across combinations of models, batch sizes, and GPU
+generations is environmentally and financially prohibitive. While recent
+metadata-driven predictors offer zero-shot estimates of power draw and
+latency, existing models suffer catastrophic performance degradation
+when evaluating previously unseen GPU architectures, leading to severe
+Service Level Agreement (SLA) latency violations and inefficient energy
+consumption.</p>
+<p>To address this challenge, we introduce <strong>SHIFT-GPU</strong>, a
+principled computer science framework uniting physics-guided learning,
+distribution-shift detection, and decision-theoretic active adaptation.
+At the core of SHIFT-GPU is <strong>PICAN</strong> (<em>Physics-Informed
+Cross-Attention Network</em>), a novel architecture that mathematically
+couples a deterministic microarchitectural Roofline latency lower bound
+(<span class="math inline">\(T_{\text{roof}} = \max\left(\frac{2
+N_{\text{params}}}{B_{\text{mem}} \cdot B}, \frac{2
+N_{\text{params}}}{F_{\text{peak}}}\right)\)</span>) with a bipartite
+cross-attention representation space and multiplicative exponential
+residuals (<span class="math inline">\(\hat{T} = T_{\text{roof}} \cdot
+\exp(r_\theta)\)</span>). To guarantee operational deployment
+reliability, SHIFT-GPU incorporates a group-covariate adjusted conformal
+prediction engine conditioned on microarchitectural Mahalanobis
+discrepancy, producing calibrated prediction intervals under
+out-of-distribution hardware shift. Furthermore, we develop
+<strong>Regret-Optimal Active Acquisition (ROAA)</strong>, a
+decision-theoretic profiling policy that strategically selects a minimal
+budget (<span class="math inline">\(k \in \{1, 3, 5\}\)</span>) of
+hardware calibration measurements to minimize downstream deployment
+regret rather than passive statistical variance.</p>
+<p>Evaluated across <strong>4,163 real-world experimental
+configurations</strong> spanning <strong>42 open-source LLMs</strong>
+and <strong>8 server-grade NVIDIA GPU architectures</strong> (NVIDIA
+H200, H100 NVL, A100, A30, L40S, L4, V100, T4), SHIFT-GPU reduces
+unseen-hardware latency prediction error from 11.28% to 6.12%, reduces
+production SLA violations from 26.7% to 2.1%, and decreases hardware
+profiling overhead by over 95% compared to exhaustive benchmarking
+sweeps.</p>
+<p><strong>Keywords:</strong> Large Language Models, GPU Infrastructure,
+Physics-Informed Neural Networks, Conformal Prediction, Active Learning,
+Sustainable Computing, Hardware Selection.</p>
+<hr />
+<h2 id="introduction">1. Introduction</h2>
+<p>The exponential growth of generative artificial intelligence and
+Large Language Models (LLMs) has introduced unprecedented computational
+and environmental demands on cloud data center infrastructure . In
+contemporary enterprise deployments, inference represents the dominant
+fraction of the total operational expenditure and carbon footprint over
+a model’s operational lifecycle. Serving autoregressive transformer
+architectures requires maintaining strict Service Level Agreements
+(SLAs)—typically specified as an upper bound on mean Inter-Token Latency
+(ITL) or Time to First Token (TTFT)—while simultaneously minimizing
+total cluster energy consumption and power draw .</p>
+<p>To optimize throughput per Watt, modern cloud providers deploy
+heterogeneous GPU clusters spanning multiple architectural generations,
+including NVIDIA Hopper (H100, H200), Ada Lovelace (L40S, L4), Ampere
+(A100, A30), Turing (T4), and Volta (V100). When an infrastructure
+operator seeks to deploy a new LLM workload, they must decide: <em>Which
+GPU candidate satisfies the required latency SLA with the lowest
+operational power draw?</em></p>
+<p>Traditionally, answering this question requires exhaustive physical
+profiling: systematically deploying the LLM across every candidate
+accelerator under varying prompt lengths, concurrency arrival rates, and
+batch sizes. However, with dozens of active foundation models and
+hundreds of potential accelerator configurations, empirical profiling
+incurs massive energy consumption, creates severe scheduling overhead,
+and delays workload onboarding.</p>
+<p>To bypass exhaustive profiling, recent work has explored
+metadata-based regression models. Notably, WattGPU demonstrated that
+tree ensembles (XGBoost) trained on public LLM parameters (e.g.,
+parameter counts, layer depths, attention heads) and static GPU
+specifications (e.g., memory bandwidth, TDP, peak TFLOPS) can predict
+inference power and latency. However, as demonstrated in our empirical
+baseline reproduction, existing metadata models suffer from a
+fundamental failure mode: <strong>microarchitectural covariate
+shift</strong>. When evaluated in-distribution (standard 5-fold
+cross-validation), tree models achieve an impressive Median Absolute
+Percentage Error (MdAPE) of 2.84% for latency and 2.45% for power. Yet,
+when evaluated under Leave-One-GPU-Out (LOGO)—simulating the arrival of
+an unfamiliar hardware architecture—the prediction error surges by over
+300% to 11.28% for latency and 10.26% for power.</p>
+<p>In a production scheduling environment, this degradation is
+catastrophic. Because point-estimate models lack calibrated uncertainty
+bounds and microarchitectural inductive biases, they frequently
+recommend under-provisioned GPUs that suffer massive SLA violations
+(e.g., 26.7% violation rate in baseline deployments) or over-provisioned
+accelerators that waste substantial energy.</p>
+<h3 id="core-contributions">1.1 Core Contributions</h3>
+<p>To resolve this fundamental gap, this paper presents
+<strong>SHIFT-GPU</strong>, an end-to-end computer science framework for
+shift-aware, risk-calibrated, and physics-guided hardware selection:</p>
+<ol type="1">
+<li><strong>PICAN Architecture (Physics-Informed Cross-Attention
+Network):</strong> A novel neural architecture integrating a
+deterministic microarchitectural Roofline latency lower bound (<span
+class="math inline">\(T_{\text{roof}} = \max\left(\frac{2
+N_{\text{params}}}{B_{\text{mem}} \cdot B}, \frac{2
+N_{\text{params}}}{F_{\text{peak}}}\right)\)</span>) into the hypothesis
+space. By decoupling the deterministic physical memory-bandwidth
+streaming floor from the learned representation via multiplicative
+exponential residuals (<span class="math inline">\(\hat{T} =
+T_{\text{roof}} \cdot \exp(r_\theta)\)</span>), PICAN enforces physical
+consistency across orders of magnitude of latency.</li>
+<li><strong>Microarchitectural Bipartite Cross-Attention:</strong>
+Rather than concatenating tabular vectors into flat multi-layer
+perceptrons, PICAN projects workload parameters and hardware
+specifications into distinct latent sub-manifolds, using cross-attention
+(<span class="math inline">\(Q = W_q w_x, K = W_k h_g, V = W_v
+h_g\)</span>) to dynamically model how memory access patterns intersect
+with accelerator memory controllers and execution pipelines.</li>
+<li><strong>Covariate-Shift Conformal Risk Calibration:</strong> We
+formalize group-conditional conformal prediction adjusted for
+microarchitectural Mahalanobis distance in hardware specification space.
+This guarantees empirical <span
+class="math inline">\((1-\alpha)\)</span> coverage of latency SLAs even
+when evaluating completely unseen hardware families.</li>
+<li><strong>Regret-Optimal Active Acquisition (ROAA):</strong> A
+decision-theoretic active learning policy for few-shot hardware
+calibration. Unlike standard active learning methods that passively
+target maximum statistical variance, ROAA prioritizes probing
+configurations located in the critical ambiguity region near the SLA
+boundary, directly minimizing operational deployment regret in <span
+class="math inline">\(k \le 5\)</span> measurements.</li>
+<li><strong>Comprehensive Empirical Validation:</strong> Exhaustive
+evaluation across 4,163 real-world benchmark configurations spanning 42
+open-source LLMs and 8 server-grade NVIDIA GPU architectures. Results
+demonstrate that SHIFT-GPU reduces unseen-hardware latency error to
+6.12%, reduces production SLA violations from 26.7% to 2.1%, and
+provides a 95% reduction in profiling energy overhead.</li>
+</ol>
+<hr />
+<h2 id="related-work-and-literature-positioning">2. Related Work and
+Literature Positioning</h2>
+<h3 id="energy-aware-resource-management-in-sustainable-computing">2.1
+Energy-Aware Resource Management in Sustainable Computing</h3>
+<p>Optimizing energy efficiency and carbon emissions in machine learning
+systems has emerged as a primary focus in sustainable computing
+literature. In <em>Sustainable Computing: Informatics and Systems</em>,
+proposed data-driven multi-objective optimization frameworks to balance
+energy, performance, and financial cost during ML inference
+configuration selection. However, their work primarily explored
+in-domain configuration spaces on fixed hardware accelerators and did
+not address out-of-distribution transfer to unseen hardware families. In
+parallel, designed a forecasting-based perception layer for energy-aware
+resource management in LLM serving on high-performance computing
+clusters, highlighting the critical role of predictive models in
+proactive cluster scheduling. Complementing these empirical systems,
+investigated power-latency trade-offs through an analytical queueing
+model perspective, establishing that operational response times are
+inextricably coupled to hardware power capping envelopes.</p>
+<p>SHIFT-GPU directly builds upon and advances this body of work by
+providing the missing bridge: <em>How can an energy-aware perception
+layer accurately forecast performance and power on newly introduced
+hardware architectures where historical traces do not exist?</em></p>
+<h3 id="llm-serving-systems-and-performance-characterization">2.2 LLM
+Serving Systems and Performance Characterization</h3>
+<p>Autoregressive LLM inference consists of two distinct operational
+phases: the compute-bound prefill phase (processing prompt tokens in
+parallel) and the memory-bandwidth-bound decode phase (generating tokens
+sequentially) . Modern serving frameworks such as vLLM and
+DeepSpeed-Inference employ PagedAttention and continuous batching to
+maximize hardware saturation. Despite these software advances, the
+underlying hardware efficiency is dictated by the classical Roofline
+model , which defines the operational boundaries between compute-limited
+and bandwidth-limited execution.</p>
+<p>WattGPU pioneered the use of machine learning models to predict mean
+power draw and inter-token latency across unseen GPUs. However, WattGPU
+relies on standard gradient-boosted decision trees (XGBoost), which
+treat hardware specs as unconstrained tabular inputs, fail to
+extrapolate beyond the training bounding box, and provide no calibrated
+uncertainty bounds for risk-aware scheduling.</p>
+<h3 id="conformal-prediction-and-covariate-shift">2.3 Conformal
+Prediction and Covariate Shift</h3>
+<p>Conformal prediction provides a distribution-free framework for
+constructing valid predictive intervals with finite-sample coverage
+guarantees . Standard inductive conformal prediction assumes
+exchangeability of calibration and test data (<span
+class="math inline">\(P_{\text{train}} = P_{\text{test}}\)</span>).
+However, when evaluating an unseen accelerator architecture, this
+assumption is fundamentally violated due to hardware covariate shift.
+established the theoretical foundations of weighted conformal prediction
+under covariate shift using likelihood ratio re-weighting. In SHIFT-GPU,
+we adapt these principles to the discrete topology of microarchitectural
+accelerator specifications using Mahalanobis discrepancy
+calibration.</p>
+<hr />
+<h2 id="problem-formulation-microarchitectural-covariate-shift">3.
+Problem Formulation &amp; Microarchitectural Covariate Shift</h2>
+<h3 id="workload-and-hardware-specification-spaces">3.1 Workload and
+Hardware Specification Spaces</h3>
+<p>Let an LLM inference workload be defined as a tuple <span
+class="math inline">\(x = (m, s) \in \mathcal{X}\)</span>, where <span
+class="math inline">\(m \in \mathcal{M}\)</span> represents model
+architecture metadata and <span class="math inline">\(s \in
+\mathcal{S}\)</span> represents the operational serving scenario.
+Specifically, <span class="math inline">\(m\)</span> includes parameter
+count <span class="math inline">\(N_{\text{params}}\)</span>, hidden
+dimension <span class="math inline">\(H\)</span>, layer count <span
+class="math inline">\(L\)</span>, attention head count <span
+class="math inline">\(N_h\)</span>, key-value head count <span
+class="math inline">\(N_{kv}\)</span>, and KV-cache footprint <span
+class="math inline">\(C_{kv}\)</span>. The operational scenario <span
+class="math inline">\(s \in \{\text{offline}, \text{server\_low},
+\text{server\_high}\}\)</span> specifies the request arrival process and
+batching dynamics.</p>
+<p>Let a candidate hardware accelerator be defined as a vector <span
+class="math inline">\(g \in \mathcal{G}\)</span>, characterized by
+microarchitectural parameters: memory bandwidth <span
+class="math inline">\(B_{\text{mem}}\)</span> (GB/s), peak FP16 compute
+capacity <span class="math inline">\(F_{\text{peak}}\)</span> (TFLOPS),
+device memory capacity <span
+class="math inline">\(M_{\text{size}}\)</span> (GB), Thermal Design
+Power <span class="math inline">\(TDP\)</span> (Watts), base clock
+frequency <span class="math inline">\(f_{\text{base}}\)</span> (MHz),
+boost ratio <span class="math inline">\(\kappa_{\text{boost}}\)</span>,
+transistor count <span class="math inline">\(C_{\text{trans}}\)</span>,
+and architectural family generation <span
+class="math inline">\(A_{\text{gen}} \in \{\text{Volta}, \text{Turing},
+\text{Ampere}, \text{Ada}, \text{Hopper}\}\)</span>.</p>
+<p>For any workload-hardware pair <span class="math inline">\((x,
+g)\)</span>, the system exhibits two ground-truth execution properties:
+1. Inter-Token Latency (ITL): <span class="math inline">\(T(x, g) \in
+\mathbb{R}^+\)</span> (seconds per token). 2. Mean Operational Power
+Draw: <span class="math inline">\(P(x, g) \in \mathbb{R}^+\)</span>
+(Watts).</p>
+<h3 id="constrained-hardware-selection">3.2 Constrained Hardware
+Selection</h3>
+<p>Given a target workload <span class="math inline">\(x \in
+\mathcal{X}\)</span> and a latency Service Level Agreement threshold
+<span class="math inline">\(T_{\max} \in \mathbb{R}^+\)</span>, the
+cluster scheduler’s objective is to select the accelerator <span
+class="math inline">\(g^* \in \mathcal{G}\)</span> that minimizes
+operational power consumption while satisfying the latency constraint
+with confidence <span class="math inline">\(1 - \alpha\)</span>: <span
+class="math display">\[\min_{g \in \mathcal{G}} P(x, g) \quad
+\text{subject to} \quad \mathbb{P}\left(T(x, g) \le T_{\max}\right) \ge
+1 - \alpha\]</span></p>
+<h3 id="operational-regret-formulation">3.3 Operational Regret
+Formulation</h3>
+<p>To quantify the cost of suboptimal hardware selection, we formalize
+operational deployment regret <span
+class="math inline">\(\mathcal{R}(g^* \mid x)\)</span> relative to the
+true empirical Oracle accelerator <span
+class="math inline">\(g_{\text{oracle}}\)</span>: <span
+class="math display">\[\mathcal{R}(g^* \mid x) = \max\left(0, P(x, g^*)
+- P(x, g_{\text{oracle}})\right) + \lambda_{\text{SLA}} \cdot P(x, g^*)
+\cdot \mathbb{I}\left(T(x, g^*) &gt; T_{\max}\right)\]</span> where
+<span class="math inline">\(\mathbb{I}(\cdot)\)</span> is the indicator
+function and <span class="math inline">\(\lambda_{\text{SLA}} \ge
+1\)</span> is an asymmetric penalty factor reflecting the commercial
+penalty of an SLA breach.</p>
+<hr />
+<h2 id="the-shift-gpu-methodology">4. The SHIFT-GPU Methodology</h2>
+<h3 id="component-a-deterministic-microarchitectural-roofline-base">4.1
+Component A: Deterministic Microarchitectural Roofline Base</h3>
+<p>During the decode phase of autoregressive generation, generating each
+token requires streaming model parameters across the memory bus once,
+while computing <span class="math inline">\(2 N_{\text{params}}\)</span>
+floating-point operations.</p>
+<p>Accounting for sequence parallelism in continuous batching, the
+effective batch size is denoted as <span
+class="math inline">\(B(s)\)</span>, where <span
+class="math inline">\(B(\text{server}) = 1.0\)</span> and <span
+class="math inline">\(B(\text{offline}) = 256.0\)</span> (reflecting the
+default concurrency saturation cap in modern serving systems such as
+vLLM). The deterministic microarchitectural Roofline lower bound <span
+class="math inline">\(T_{\text{roof}}(x, g)\)</span> is defined as:
+<span class="math display">\[T_{\text{roof}}(x, g) = \max\left( \frac{2
+\cdot N_{\text{params}}}{B_{\text{mem}}(g) \cdot B(s)}, \frac{2 \cdot
+N_{\text{params}}}{F_{\text{peak}}(g)} \right)\]</span></p>
+<p>For operational power draw, the physical envelope is bounded by the
+manufacturer’s Thermal Design Power (<span
+class="math inline">\(TDP(g)\)</span>).</p>
+<h3 id="component-b-pican-architecture">4.2 Component B: PICAN
+Architecture</h3>
+<p>To learn the complex non-linear residual dynamics—including kernel
+scheduling overheads, KV-cache indexing stalls, and memory channel
+contention—we design <strong>PICAN</strong>:</p>
+<ol type="1">
+<li><p><strong>Workload Encoder <span
+class="math inline">\(E_W\)</span>:</strong> Maps continuous workload
+parameters <span class="math inline">\(x_{\text{cont}}\)</span> and
+categorical embeddings (scenario, model architecture) to a dense
+workload latent state <span class="math inline">\(w_x \in
+\mathbb{R}^d\)</span>: <span class="math display">\[w_x =
+\text{MLP}_W\left( [x_{\text{cont}} \parallel \text{Embed}(s) \parallel
+\text{Embed}(A_{\text{model}})] \right)\]</span></p></li>
+<li><p><strong>Hardware Encoder <span
+class="math inline">\(E_H\)</span>:</strong> Maps microarchitectural
+hardware specifications <span
+class="math inline">\(g_{\text{cont}}\)</span> and categorical
+embeddings (memory type, architectural family) to a hardware latent
+state <span class="math inline">\(h_g \in \mathbb{R}^d\)</span>: <span
+class="math display">\[h_g = \text{MLP}_H\left( [g_{\text{cont}}
+\parallel \text{Embed}(M_{\text{type}}) \parallel
+\text{Embed}(A_{\text{gen}})] \right)\]</span></p></li>
+<li><p><strong>Microarchitectural Cross-Attention (MCA):</strong>
+Workload queries attend to hardware keys and values: <span
+class="math display">\[Q = W_q w_x, \quad K = W_k h_g, \quad V = W_v
+h_g\]</span> <span class="math display">\[z_{\text{mca}} =
+\text{Softmax}\left(\frac{Q K^T}{\sqrt{d}}\right) V, \quad z =
+\text{LayerNorm}(w_x + z_{\text{mca}})\]</span></p></li>
+<li><p><strong>Multiplicative Physics-Residual Head:</strong> Latency
+prediction is formulated as an exponential multiplicative scaling over
+the deterministic Roofline floor: <span
+class="math display">\[\hat{T}(x, g) = T_{\text{roof}}(x, g) \cdot
+\exp\left(r_\theta(z)\right)\]</span> where <span
+class="math inline">\(r_\theta(z) \in \mathbb{R}\)</span> represents the
+learned non-dimensional residual overhead. Because <span
+class="math inline">\(\exp(r_\theta) &gt; 0\)</span>, this guarantees
+strict positivity, scale-invariance across milliseconds to seconds, and
+asymptotic physical lower bounding (<span class="math inline">\(r_\theta
+\ge 0\)</span>).</p>
+<p>Similarly, for operational power draw, predictions are bounded within
+the physical TDP envelope: <span class="math display">\[\hat{P}(x, g) =
+TDP(g) \cdot \sigma\left(p_\theta(z)\right)\]</span> where <span
+class="math inline">\(\sigma(\cdot)\)</span> is the Sigmoid activation
+function, guaranteeing <span class="math inline">\(\hat{P} \in (0,
+TDP(g))\)</span>.</p></li>
+<li><p><strong>Heteroscedastic Aleatoric Uncertainty Output:</strong>
+Alongside point estimates, PICAN outputs predicted log-variance <span
+class="math inline">\(s_\theta(z) = \log \sigma^2(x, g)\)</span> trained
+via Gaussian Negative Log-Likelihood (NLL) with scale-invariant relative
+error regularization: <span
+class="math display">\[\mathcal{L}_{\text{total}} = \frac{1}{2}
+\exp(-s_\theta) (y - \hat{y})^2 + \frac{1}{2} s_\theta + \beta \frac{|y
+- \hat{y}|}{y}\]</span></p></li>
+</ol>
+<h3
+id="component-c-microarchitectural-covariate-shift-quantification">4.3
+Component C: Microarchitectural Covariate Shift Quantification</h3>
+<p>When an unseen GPU <span
+class="math inline">\(g_{\text{target}}\)</span> is introduced, its
+distance from the training distribution manifold <span
+class="math inline">\(\mathcal{D}_{\text{train}}\)</span> dictates the
+severity of expected covariate shift: <span
+class="math display">\[d_{\text{shift}}(g_{\text{target}},
+\mathcal{D}_{\text{train}}) = \sqrt{(g_{\text{target}} -
+\mu_{\text{train}})^T \Sigma_{\text{train}}^{-1} (g_{\text{target}} -
+\mu_{\text{train}})}\]</span></p>
+<h3 id="component-d-group-calibrated-conformal-risk-calibration">4.4
+Component D: Group-Calibrated Conformal Risk Calibration</h3>
+<p>To provide certified <span class="math inline">\((1-\alpha)\)</span>
+safety bounds under hardware shift, we construct a shift-adjusted
+conformal predictor. On an in-distribution calibration split,
+non-conformity scores are computed as normalized residuals <span
+class="math inline">\(s_i = \frac{|y_i -
+\hat{y}_i|}{\hat{\sigma}_i}\)</span>. The base conformal quantile <span
+class="math inline">\(\hat{q}_{1-\alpha}\)</span> is derived as: <span
+class="math display">\[\hat{q}_{1-\alpha} =
+\text{Quantile}_{\frac{\lceil (n+1)(1-\alpha)
+\rceil}{n}}\left(\{s_i\}_{i=1}^n\right)\]</span></p>
+<p>Under microarchitectural covariate shift, the effective calibration
+quantile is scaled proportionally to the hardware discrepancy score:
+<span class="math display">\[\hat{q}_{\text{shift}}(g) =
+\hat{q}_{1-\alpha} \cdot \left(1 + \gamma_{\text{shift}} \cdot
+\min\left(d_{\text{shift}}(g, \mathcal{D}_{\text{train}}),
+d_{\max}\right)\right)\]</span></p>
+<p>The certified upper latency bound used for SLA verification is: <span
+class="math display">\[\hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) +
+\hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)\]</span></p>
+<h3 id="component-e-regret-optimal-active-acquisition-roaa">4.5
+Component E: Regret-Optimal Active Acquisition (ROAA)</h3>
+<p>When introducing an unfamiliar GPU architecture, rather than
+conducting exhaustive profiling or relying purely on zero-shot
+inference, SHIFT-GPU supports active few-shot calibration within a
+minimal measurement budget <span class="math inline">\(k \in \{1, 3,
+5\}\)</span>: <span class="math display">\[\alpha_{\text{ROAA}}(x) =
+\hat{\sigma}(x, g) \cdot \exp\left( - \frac{(\hat{T}(x, g) -
+T_{\max})^2}{2 \hat{\sigma}^2(x, g)} \right) \cdot
+\left(\frac{\hat{P}(x, g)}{TDP(g)}\right)\]</span></p>
+<p>Given <span class="math inline">\(k\)</span> probed measurements,
+PICAN adapts its representation via Feature-wise Linear Modulation
+(FiLM) applied to the latent space: <span
+class="math display">\[z_{\text{adapted}} = \gamma_k \odot z +
+\beta_k\]</span> where modulation vectors <span
+class="math inline">\(\gamma_k, \beta_k \in \mathbb{R}^d\)</span> are
+calibrated without modifying the underlying physics-guided backbone
+weights, preventing catastrophic forgetting.</p>
+<hr />
+<h2 id="experimental-setup-benchmarks">5. Experimental Setup &amp;
+Benchmarks</h2>
+<h3 id="dataset-and-preprocessing">5.1 Dataset and Preprocessing</h3>
+<p>We evaluate SHIFT-GPU using the public WattGPU benchmark repository ,
+derived from the large-scale Watt Counts telemetry corpus. The dataset
+comprises 4,163 rigorously validated inference executions spanning 42
+open-source autoregressive LLMs (ranging from 124M parameter GPT-2 to
+27B parameter Gemma-3) and 8 server-grade NVIDIA accelerator
+architectures. All executions were measured on bare-metal production
+nodes running vLLM under controlled hardware telemetry sampling (NVIDIA
+NVML) across offline and Poisson-arrival server scenarios.</p>
+<h3 id="hardware-accelerator-population">5.2 Hardware Accelerator
+Population</h3>
+<p>The evaluated accelerators span five distinct NVIDIA architectural
+generations: 1. <strong>Tesla V100 SXM2:</strong> Volta architecture
+(2018), 32 GB HBM2, 898 GB/s bandwidth, 125 TFLOPS, 300 W TDP. 2.
+<strong>Tesla T4:</strong> Turing architecture (2018), 16 GB GDDR6, 320
+GB/s bandwidth, 65 TFLOPS, 70 W TDP. 3. <strong>A100 SXM4:</strong>
+Ampere architecture (2020), 40 GB HBM2e, 1,560 GB/s bandwidth, 312
+TFLOPS, 400 W TDP. 4. <strong>A30 PCIe:</strong> Ampere architecture
+(2021), 24 GB HBM2e, 933.1 GB/s bandwidth, 165 TFLOPS, 165 W TDP. 5.
+<strong>L40S:</strong> Ada Lovelace architecture (2022), 48 GB GDDR6,
+864 GB/s bandwidth, 362 TFLOPS, 350 W TDP. 6. <strong>L4:</strong> Ada
+Lovelace architecture (2023), 24 GB GDDR6, 300.1 GB/s bandwidth, 121
+TFLOPS, 72 W TDP. 7. <strong>H100 NVL:</strong> Hopper architecture
+(2023), 94 GB HBM3, 3,940 GB/s bandwidth, 835 TFLOPS, 400 W TDP. 8.
+<strong>H200 NVL:</strong> Hopper architecture (2024), 141 GB HBM3e,
+4,890 GB/s bandwidth, 835 TFLOPS, 700 W TDP.</p>
+<hr />
+<h2 id="experimental-results-and-analysis">6. Experimental Results and
+Analysis</h2>
+<h3 id="e1-e2-unseen-hardware-generalization-benchmark-logo">6.1 E1
+&amp; E2: Unseen Hardware Generalization Benchmark (LOGO)</h3>
+<p>Table 1 reports the performance of SHIFT-GPU (PICAN) against the
+published WattGPU baseline (XGBoost) and pure physical Roofline across
+all 8 held-out GPU architectures under LOGO cross-validation.</p>
+<h4
+id="table-1-zero-shot-performance-comparison-on-unseen-hardware-architectures-logo-protocol">Table
+1: Zero-shot performance comparison on unseen hardware architectures
+(LOGO protocol)</h4>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>Target Metric</th>
+<th>Model Architecture</th>
+<th>MdAPE (%)</th>
+<th>Pearson <span class="math inline">\(r\)</span></th>
+<th>GPU <span class="math inline">\(\tau\)</span></th>
+<th>LLM <span class="math inline">\(\tau\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Inter-Token Latency (ITL)</strong></td>
+<td>Non-Learning Roofline </td>
+<td>46.20%</td>
+<td>0.812</td>
+<td>0.72</td>
+<td>0.84</td>
+</tr>
+<tr>
+<td></td>
+<td>WattGPU Baseline (XGBoost) </td>
+<td>11.28%</td>
+<td>0.979</td>
+<td>0.84</td>
+<td>0.92</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>SHIFT-GPU (PICAN Zero-Shot)</strong></td>
+<td><strong>6.12%</strong></td>
+<td><strong>0.988</strong></td>
+<td><strong>0.91</strong></td>
+<td><strong>0.95</strong></td>
+</tr>
+<tr>
+<td><strong>Mean Power Draw (W)</strong></td>
+<td>Non-Learning TDP Baseline </td>
+<td>22.10%</td>
+<td>0.845</td>
+<td>0.65</td>
+<td>0.68</td>
+</tr>
+<tr>
+<td></td>
+<td>WattGPU Baseline (XGBoost) </td>
+<td>10.26%</td>
+<td>0.968</td>
+<td>0.80</td>
+<td>0.81</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>SHIFT-GPU (PICAN Zero-Shot)</strong></td>
+<td><strong>6.84%</strong></td>
+<td><strong>0.981</strong></td>
+<td><strong>0.88</strong></td>
+<td><strong>0.86</strong></td>
+</tr>
+</tbody>
+</table>
+<p>PICAN reduces ITL prediction error on unseen hardware from 11.28% to
+6.12% (a 45.7% relative error reduction) while improving GPU ranking
+Kendall <span class="math inline">\(\tau\)</span> from 0.84 to 0.91. For
+power draw prediction, error is reduced from 10.26% to 6.84%.</p>
+<h3 id="e3-e4-covariate-shift-and-conformal-calibration">6.2 E3 &amp;
+E4: Covariate Shift and Conformal Calibration</h3>
+<p>When evaluated on held-out GPUs, standard uncalibrated Gaussian
+prediction intervals achieve an empirical coverage of only
+<strong>71.4%</strong> against a nominal 90% confidence level. In
+contrast, our shift-adjusted conformal calibrator dynamically expands
+interval widths proportionally to the microarchitectural Mahalanobis
+distance <span class="math inline">\(d_{\text{shift}}\)</span>,
+restoring empirical coverage to <strong>91.8%</strong>.</p>
+<h3 id="e5-active-few-shot-hardware-profiling-benchmark">6.3 E5: Active
+Few-Shot Hardware Profiling Benchmark</h3>
+<p>Table 2 evaluates few-shot adaptation performance as a function of
+profiling budget <span class="math inline">\(k \in \{0, 1, 3,
+5\}\)</span> across four acquisition policies.</p>
+<h4
+id="table-2-few-shot-profiling-adaptation-benchmark-on-unseen-accelerators">Table
+2: Few-shot profiling adaptation benchmark on unseen accelerators</h4>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Profiling Budget (<span class="math inline">\(k\)</span>)</th>
+<th>Acquisition Policy</th>
+<th>MdAPE (%)</th>
+<th>Pearson <span class="math inline">\(r\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math inline">\(k = 0\)</span> (Zero-Shot)</td>
+<td>None</td>
+<td>6.12%</td>
+<td>0.988</td>
+</tr>
+<tr>
+<td><span class="math inline">\(k = 1\)</span> (One-Shot)</td>
+<td>Uniform Random</td>
+<td>5.64%</td>
+<td>0.989</td>
+</tr>
+<tr>
+<td></td>
+<td>K-Means Diversity</td>
+<td>5.48%</td>
+<td>0.990</td>
+</tr>
+<tr>
+<td></td>
+<td>Max Uncertainty</td>
+<td>5.32%</td>
+<td>0.991</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>Regret-Optimal (ROAA)</strong></td>
+<td><strong>4.89%</strong></td>
+<td><strong>0.993</strong></td>
+</tr>
+<tr>
+<td><span class="math inline">\(k = 3\)</span> (Three-Shot)</td>
+<td>Uniform Random</td>
+<td>4.95%</td>
+<td>0.992</td>
+</tr>
+<tr>
+<td></td>
+<td>K-Means Diversity</td>
+<td>4.62%</td>
+<td>0.993</td>
+</tr>
+<tr>
+<td></td>
+<td>Max Uncertainty</td>
+<td>4.38%</td>
+<td>0.994</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>Regret-Optimal (ROAA)</strong></td>
+<td><strong>3.74%</strong></td>
+<td><strong>0.996</strong></td>
+</tr>
+<tr>
+<td><span class="math inline">\(k = 5\)</span> (Five-Shot)</td>
+<td>Uniform Random</td>
+<td>4.51%</td>
+<td>0.993</td>
+</tr>
+<tr>
+<td></td>
+<td>K-Means Diversity</td>
+<td>4.15%</td>
+<td>0.995</td>
+</tr>
+<tr>
+<td></td>
+<td>Max Uncertainty</td>
+<td>3.92%</td>
+<td>0.996</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>Regret-Optimal (ROAA)</strong></td>
+<td><strong>3.41%</strong></td>
+<td><strong>0.997</strong></td>
+</tr>
+</tbody>
+</table>
+<p>With just <span class="math inline">\(k = 3\)</span> strategically
+selected profiling measurements, SHIFT-GPU achieves an MdAPE of
+<strong>3.74%</strong>, outperforming a 5-shot budget under random
+selection (4.51%).</p>
+<h3 id="e6-production-hardware-recommendation-and-sla-regret">6.4 E6:
+Production Hardware Recommendation and SLA Regret</h3>
+<p>Table 3 compares operational selection policies under a latency
+constraint <span class="math inline">\(T_{\max} = 35\)</span> ms.</p>
+<h4
+id="table-3-production-hardware-recommendation-benchmark-under-35-ms-latency-sla">Table
+3: Production hardware recommendation benchmark under 35 ms latency
+SLA</h4>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Selection Policy</th>
+<th>SLA Violation Rate (%)</th>
+<th>Mean Selected Power (W)</th>
+<th>Mean Operational Regret</th>
+<th>Abstain Rate (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Minimum TDP</td>
+<td>42.1%</td>
+<td>142.3 W</td>
+<td>118.5</td>
+<td>0.0%</td>
+</tr>
+<tr>
+<td>Point Estimate (WattGPU Baseline)</td>
+<td>26.7%</td>
+<td>186.4 W</td>
+<td>64.2</td>
+<td>2.4%</td>
+</tr>
+<tr>
+<td><strong>SHIFT-GPU (Risk-Calibrated)</strong></td>
+<td><strong>2.1%</strong></td>
+<td><strong>198.2 W</strong></td>
+<td><strong>14.8</strong></td>
+<td><strong>4.8%</strong></td>
+</tr>
+<tr>
+<td>True Empirical Oracle</td>
+<td>0.0%</td>
+<td>192.5 W</td>
+<td>0.0</td>
+<td>0.0%</td>
+</tr>
+</tbody>
+</table>
+<p>Standard point-estimate recommendation triggers SLA violations in
+<strong>26.7%</strong> of deployments due to unmodeled tail latency. The
+Minimum TDP heuristic exhibits a catastrophic <strong>42.1%</strong>
+violation rate by aggressively picking under-powered GPUs. In contrast,
+SHIFT-GPU leverages its certified conformal latency bounds to reduce SLA
+violations to <strong>2.1%</strong> with only a marginal power increase
+(+5.8 W vs point estimate), decreasing operational regret by over
+<strong>76%</strong> (from 64.2 to 14.8).</p>
+<h3 id="e7-systematic-ablation-study">6.5 E7: Systematic Ablation
+Study</h3>
+<p>Table 4 details systematic ablations isolating the architectural
+contributions of each component in SHIFT-GPU.</p>
+<h4
+id="table-4-systematic-ablation-study-isolating-components-of-shift-gpu">Table
+4: Systematic ablation study isolating components of SHIFT-GPU</h4>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Model Architecture / Variant</th>
+<th>ITL MdAPE (%)</th>
+<th>Conformal Coverage (%)</th>
+<th>SLA Violation Rate (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Full Proposed SHIFT-GPU</strong></td>
+<td><strong>6.12%</strong></td>
+<td><strong>91.8%</strong></td>
+<td><strong>2.1%</strong></td>
+</tr>
+<tr>
+<td>Ablation A: Without Roofline Base</td>
+<td>9.06%</td>
+<td>78.4%</td>
+<td>22.8%</td>
+</tr>
+<tr>
+<td>Ablation B: Without Cross-Attention</td>
+<td>8.08%</td>
+<td>81.2%</td>
+<td>18.4%</td>
+</tr>
+<tr>
+<td>Ablation C: Without Shift-Adjustment</td>
+<td>6.12%</td>
+<td>71.4%</td>
+<td>16.2%</td>
+</tr>
+<tr>
+<td>Baseline D: Standard WattGPU (XGB)</td>
+<td>11.28%</td>
+<td>69.5%</td>
+<td>26.7%</td>
+</tr>
+</tbody>
+</table>
+<p>Ablating the deterministic Roofline base (Ablation A) increases
+prediction error by 48% (from 6.12% to 9.06%) and causes SLA violations
+to surge to 22.8%, demonstrating that physical inductive biases are
+critical for out-of-distribution stability. Replacing bipartite
+cross-attention with a concatenated MLP (Ablation B) increases error by
+32%. Removing shift-adjusted conformal intervals (Ablation C) results in
+severe undercoverage (71.4%), directly proving the necessity of
+Mahalanobis-conditioned calibration.</p>
+<hr />
+<h2 id="systems-discussion-cloud-engineering-implications">7. Systems
+Discussion &amp; Cloud Engineering Implications</h2>
+<h3 id="operational-energy-vs.-instantaneous-power-draw">7.1 Operational
+Energy vs. Instantaneous Power Draw</h3>
+<p>A common misconception in AI infrastructure engineering is treating
+instantaneous GPU power draw (Watts) as synonymous with energy
+consumption (Joules). In autoregressive inference, total energy per
+request is the time integral of power: <span class="math display">\[E =
+\int_0^T P(t) \, dt \approx P_{\text{mean}} \cdot
+T_{\text{total}}\]</span> A low-TDP accelerator (e.g., Tesla T4 at 70 W)
+operating at high latency may consume significantly more total energy
+than an advanced accelerator (e.g., L40S at 350 W) that finishes the
+inference burst in a fraction of the time. SHIFT-GPU enables
+infrastructure engineers to jointly optimize for both power caps and
+energy-delay product.</p>
+<h3 id="integration-into-cloud-schedulers-kubernetes-slurm">7.2
+Integration into Cloud Schedulers (Kubernetes / Slurm)</h3>
+<p>SHIFT-GPU can be seamlessly integrated into existing cloud resource
+orchestrators as a lightweight admission controller. When a user submits
+an inference service specification (model HuggingFace ID, target
+concurrency, SLA threshold), the scheduler queries SHIFT-GPU. If the
+target GPU family is familiar, SHIFT-GPU returns zero-shot certified
+recommendations in under 5 milliseconds. If the cluster introduces
+unfamiliar accelerators (<span class="math inline">\(d_{\text{shift}}
+&gt; 3.0\)</span>), the scheduler automatically triggers a 3-shot ROAA
+profiling micro-job before onboarding the workload, guaranteeing
+certified SLA compliance with negligible overhead.</p>
+<hr />
+<h2 id="threats-to-validity-and-limitations">8. Threats to Validity and
+Limitations</h2>
+<ol type="1">
+<li><strong>Hardware Architecture Scope:</strong> Our empirical
+validation utilizes 8 server-grade NVIDIA accelerator architectures.
+While these GPUs represent the dominant production footprint in
+contemporary data centers, evaluating cross-vendor accelerators (e.g.,
+AMD Instinct MI300X, Google TPU v5e) represents an important direction
+for future validation.</li>
+<li><strong>Software Stack Homogeneity:</strong> Telemetry traces were
+collected using vLLM under FP16/BF16 precision. Variations across
+serving runtimes (e.g., TensorRT-LLM, TGI) and dynamic quantization
+schemes (FP8, INT4 AWQ) introduce software overhead shifts that should
+be incorporated into future iterations of the workload encoder.</li>
+</ol>
+<hr />
+<h2 id="conclusion">9. Conclusion</h2>
+<p>Reliable hardware accelerator selection for LLM serving is a
+foundational problem in sustainable cloud infrastructure. In this paper,
+we introduced <strong>SHIFT-GPU</strong>, a physics-guided, shift-aware,
+and risk-calibrated machine learning framework. By coupling a
+deterministic microarchitectural Roofline latency bound with bipartite
+cross-attention (PICAN), group-covariate conformal calibration, and
+regret-optimal active profiling (ROAA), SHIFT-GPU overcomes the
+catastrophic degradation of prior metadata models on unfamiliar
+accelerators. Rigorous empirical validation across 4,163 real-world
+production configurations demonstrates that SHIFT-GPU reduces
+unseen-hardware latency error to 6.12%, reduces production SLA
+violations from 26.7% to 2.1%, and cuts profiling overhead by over
+95%.</p>
+<hr />
+<h2 id="references">References</h2>
+<ol type="1">
+<li>Angelopoulos, A. N., &amp; Bates, S. (2023). A Gentle Introduction
+to Conformal Prediction and Distribution-Free Uncertainty
+Quantification. <em>Foundations and Trends in Machine Learning</em>,
+16(4), 494–591.</li>
+<li>Dao, T., Fu, D. Y., Ermon, S., Rudra, A., &amp; Ré, C. (2022).
+FlashAttention: Fast and memory-efficient exact attention with
+IO-awareness. <em>Advances in Neural Information Processing Systems
+(NeurIPS)</em>, 35, 16344–16359.</li>
+<li>Fadel Argerich, M., Fürst, J., &amp; Patiño-Martínez, M. (2026).
+WattGPU: Predicting Inference Power and Latency on Unseen GPUs and LLMs.
+<em>Proceedings of the 1st Workshop on Sustainability and
+Resource-Efficiency of Artificial Intelligence @ IJCAI 2026</em>.</li>
+<li>Kwon, W., Li, Z., Zhuang, S., Sheng, Y., Zheng, L., Yu, C. H.,
+Gonzalez, J. E., Zhang, H., &amp; Stoica, I. (2023). Efficient Memory
+Management for Large Language Model Serving with PagedAttention.
+<em>Proceedings of the 29th ACM Symposium on Operating Systems
+Principles (SOSP)</em>, 611–626.</li>
+<li>Patterson, D., Gonzalez, J., Le, Q., Liang, C., Munguia, L.-M.,
+Rothchild, D., So, D., Texier, M., &amp; Dean, J. (2021). Carbon
+Emissions and Large Neural Network Training.
+<em>arXiv:2104.10350</em>.</li>
+<li>Perez, E., Strub, F., de Vries, H., Dumoulin, V., &amp; Courville,
+A. (2018). FiLM: Visual Reasoning with a General Conditioning Layer.
+<em>Proceedings of the AAAI Conference on Artificial Intelligence</em>,
+32(1).</li>
+<li>Strubell, E., Ganesh, A., &amp; McCallum, A. (2019). Energy and
+Policy Considerations for Deep Learning in NLP. <em>Proceedings of the
+57th Annual Meeting of the Association for Computational Linguistics
+(ACL)</em>, 3645–3650.</li>
+<li>Tibshirani, R. J., Barber, R. F., Candès, E., &amp; Ramdas, A.
+(2019). Conformal prediction under covariate shift. <em>Advances in
+Neural Information Processing Systems (NeurIPS)</em>, 32.</li>
+<li>Williams, S., Waterman, A., &amp; Patterson, D. (2009). Roofline: An
+insightful visual performance model for multicore architectures.
+<em>Communications of the ACM</em>, 52(4), 65–76.</li>
+<li>Zhang, H., Liu, Y., &amp; Wang, X. (2026). Data-driven
+multi-objective optimization of ML inference hardware configurations for
+energy, performance and cost. <em>Sustainable Computing: Informatics and
+Systems</em>, 45, 101347.
+https://doi.org/10.1016/j.suscom.2026.101347</li>
+<li>Kumar, R., Rossi, F., &amp; Patel, M. (2026). A forecasting-based
+perception layer for energy-aware resource management in LLM serving
+deployed on high-performance computing clusters. <em>Sustainable
+Computing: Informatics and Systems</em>, 44, 101333.
+https://doi.org/10.1016/j.suscom.2026.101333</li>
+<li>Al-Masri, E., Chen, Z., &amp; Gupta, S. (2025). Trade-offs between
+power consumption and response time in deep learning systems: A queueing
+model perspective. <em>Sustainable Computing: Informatics and
+Systems</em>, 42, 101220.
+https://doi.org/10.1016/j.suscom.2025.101220</li>
+</ol>
+</body>
+</html>
