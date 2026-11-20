@@ -1,0 +1,120 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.5in, landscape]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shadows, fit}
+
+\begin{document}
+\thispagestyle{empty}
+
+\begin{center}
+{\Large \textbf{Graphical Abstract}}\\[0.4em]
+{\large \textbf{SHIFT-GPU: Shift-Aware, Risk-Calibrated and Physics-Guided Learning for Reliable LLM Inference Hardware Selection}}\\[0.2em]
+{\normalsize Jason Pandian, I. Kala}
+\end{center}
+
+\vspace{0.5em}
+
+\centering
+\begin{tikzpicture}[
+    auto,
+    node distance=1.6cm and 1.8cm,
+    box/.style={
+        draw=#1!80!black,
+        fill=#1!20,
+        thick,
+        rounded corners=5pt,
+        align=center,
+        inner sep=8pt,
+        font=\small
+    },
+    titlebox/.style={
+        font=\bfseries\small,
+        text=black
+    },
+    desc/.style={
+        font=\scriptsize,
+        text=black!90
+    },
+    arrow/.style={
+        -{Stealth[length=2.5mm,width=2mm]},
+        thick,
+        line width=1.1pt,
+        draw=black!75
+    },
+    dasharrow/.style={
+        -{Stealth[length=2.5mm,width=2mm]},
+        thick,
+        line width=1.1pt,
+        dashed,
+        draw=orange!80!black
+    },
+    labelbox/.style={
+        fill=white,
+        inner sep=2pt,
+        font=\scriptsize\bfseries,
+        text=blue!70!black
+    }
+]
+
+% Top: Orchestrator
+\node[box=yellow, minimum width=12cm, minimum height=1.3cm] (orch) {
+    \textbf{SHIFT-GPU Orchestrator (Admission Controller \& Decision Engine)}\\
+    \scriptsize Workload Specification $x = (m, s) \in \mathcal{X}$ \quad \textbar \quad Candidate Hardware Accelerators $g \in \mathcal{G}$ \quad \textbar \quad Latency SLA $T_{\max}$
+};
+
+% Middle Left: Roofline
+\node[box=blue, below left=1.3cm and 0.2cm of orch, minimum width=6.8cm, minimum height=1.6cm] (roof) {
+    \textbf{Deterministic Microarchitectural Base}\\
+    \scriptsize Analytical Decode Roofline Latency Lower Bound:\\
+    \scriptsize $T_{\text{roof}}(x, g) = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}}(g) \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}(g)}\right)$\\
+    \scriptsize Physical Power Envelope: $P(x, g) \le TDP(g)$
+};
+
+% Middle Right: PICAN
+\node[box=green, below right=1.3cm and 0.2cm of orch, minimum width=6.8cm, minimum height=1.6cm] (pican) {
+    \textbf{PICAN: Physics-Informed Cross-Attention}\\
+    \scriptsize Workload Encoder $E_W(x) \in \mathbb{R}^d$ \quad Hardware Encoder $E_H(g) \in \mathbb{R}^d$\\
+    \scriptsize Bipartite Cross-Attention Core: $Q = W_q w_x, K = W_k h_g, V = W_v h_g$\\
+    \scriptsize Multiplicative Exponential Residual: $\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))$\\
+    \scriptsize Heteroscedastic Aleatoric Log-Variance Head: $s_\theta = \log \hat{\sigma}^2$
+};
+
+% Conformal Calibrator
+\node[box=purple, below=3.6cm of orch, minimum width=11cm, minimum height=1.4cm] (conf) {
+    \textbf{Covariate-Shift Conformal Risk Calibrator}\\
+    \scriptsize Microarchitectural Mahalanobis Discrepancy: $d_{\text{shift}}(g, \mathcal{D}_{\text{train}}) = \sqrt{(g - \mu)^T \Sigma^{-1} (g - \mu)}$\\
+    \scriptsize Shift-Scaled Conformal Quantile: $\hat{q}_{\text{shift}}(g) = \hat{q}_{1-\alpha} \cdot (1 + \gamma \cdot \min(d_{\text{shift}}, d_{\max}))$\\
+    \scriptsize Certified Upper SLA Latency Bound: $\hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)$
+};
+
+% Bottom Left: ROAA
+\node[box=orange, below left=1.2cm and 0.1cm of conf, minimum width=6.5cm, minimum height=1.5cm] (roaa) {
+    \textbf{Regret-Optimal Active Acquisition (ROAA)}\\
+    \scriptsize Decision-Theoretic Boundary Utility: $\alpha_{\text{ROAA}}(x) \propto \hat{\sigma} \exp\left(-\frac{(\hat{T}-T_{\max})^2}{2\hat{\sigma}^2}\right) \frac{\hat{P}}{TDP}$\\
+    \scriptsize Minimal Calibration Budget $k \in \{1, 3, 5\}$ Measurements\\
+    \scriptsize Latent FiLM Modulation: $z_{\text{adapted}} = \gamma_k \odot z + \beta_k$
+};
+
+% Bottom Right: Recommendation
+\node[box=red, below right=1.2cm and 0.1cm of conf, minimum width=6.5cm, minimum height=1.5cm] (recom) {
+    \textbf{SLA-Constrained Hardware Selector}\\
+    \scriptsize Certified SLA Feasibility Filter: $\hat{T}_{\text{upper}}(x, g) \le T_{\max}$\\
+    \scriptsize Min Operational Power: $g^* = \arg\min_{g \in \mathcal{G}_{\text{feasible}}} \hat{P}(x, g)$\\
+    \scriptsize Near-Oracle Performance: SLA Violations $< 2.1\%$
+};
+
+% Arrows
+\draw[arrow] (orch.south -| roof.north) -- (roof.north) node[midway, labelbox] {Hardware $g$ \& Workload $x$};
+\draw[arrow] (orch.south -| pican.north) -- (pican.north) node[midway, labelbox] {Hardware $g$ \& Workload $x$};
+
+\draw[arrow] (roof.south) -- (conf.north -| roof.south) node[midway, labelbox] {Physical Floor $T_{\text{roof}}$};
+\draw[arrow] (pican.south) -- (conf.north -| pican.south) node[midway, labelbox] {Residual $r_\theta$, Uncertainty $\hat{\sigma}$};
+
+\draw[arrow] (conf.south -| roaa.north) -- (roaa.north) node[midway, labelbox] {Shift $d_{\text{shift}} > \tau$ (Few-Shot Trigger)};
+\draw[arrow] (conf.south -| recom.north) -- (recom.north) node[midway, labelbox] {Certified SLA Bound $\hat{T}_{\text{upper}}$};
+
+\draw[dasharrow] (roaa.east) -- (recom.west) node[midway, labelbox] {Calibrated $\hat{P}, \hat{T}$};
+
+\end{tikzpicture}
+
+\end{document}
