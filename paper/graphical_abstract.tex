@@ -1,121 +1,144 @@
 \documentclass[11pt]{article}
-\usepackage[margin=0.5in, landscape]{geometry}
+\usepackage[margin=0.4in, landscape]{geometry}
 \usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shadows, fit}
+
+\newcommand{\head}[2]{\textbf{\color{#1!90!black}#2}}
 
 \begin{document}
 \thispagestyle{empty}
 
 \begin{center}
-{\Large \textbf{Graphical Abstract}}\\[0.4em]
-{\large \textbf{SHIFT-GPU: Shift-Aware, Risk-Calibrated and Physics-Guided Learning for Reliable LLM Inference Hardware Selection}}\\[0.2em]
-{\normalsize Jason Pandian}
+{\Large \textbf{SHIFT-GPU: Shift-Aware, Risk-Calibrated and Physics-Guided Learning for Reliable LLM Hardware Selection}}\\[0.2em]
+{\small Jason Pandian \quad $\cdot$ \quad Department of Information Technology, Nehru Institute of Technology, Coimbatore, India}
 \end{center}
 
-\vspace{0.5em}
-
+\vspace{0.4em}
 \centering
+\resizebox{0.96\linewidth}{!}{%
 \begin{tikzpicture}[
     auto,
-    node distance=1.6cm and 1.8cm,
-    box/.style={
+    node distance=0.8cm and 0.9cm,
+    stage/.style={
+        draw=gray!50,
+        fill=gray!3,
+        rounded corners=6pt,
+        inner sep=8pt
+    },
+    card/.style={
         draw=#1!80!black,
-        fill=#1!20,
+        fill=#1!8,
         thick,
-        rounded corners=5pt,
+        rounded corners=4pt,
         align=center,
-        inner sep=8pt,
+        inner sep=6pt,
         font=\small
     },
-    titlebox/.style={
+    head/.style={
         font=\bfseries\small,
-        text=black
+        text=#1!90!black
     },
-    desc/.style={
-        font=\scriptsize,
+    code/.style={
+        font=\footnotesize\ttfamily,
         text=black!90
+    },
+    math/.style={
+        font=\footnotesize,
+        text=black!95
     },
     arrow/.style={
         -{Stealth[length=2.5mm,width=2mm]},
         thick,
         line width=1.1pt,
-        draw=black!75
+        draw=black!70
     },
-    dasharrow/.style={
-        -{Stealth[length=2.5mm,width=2mm]},
-        thick,
-        line width=1.1pt,
-        dashed,
-        draw=orange!80!black
-    },
-    labelbox/.style={
-        fill=white,
-        inner sep=2pt,
+    badge/.style={
+        fill=#1!20,
+        draw=#1!80!black,
+        rounded corners=3pt,
         font=\scriptsize\bfseries,
-        text=blue!70!black
+        inner sep=3pt,
+        text=#1!90!black
     }
 ]
 
-% Top: Orchestrator
-\node[box=yellow, minimum width=12cm, minimum height=1.3cm] (orch) {
-    \textbf{SHIFT-GPU Orchestrator (Admission Controller \& Decision Engine)}\\
-    \scriptsize Workload Specification $x = (m, s) \in \mathcal{X}$ \quad \textbar \quad Candidate Hardware Accelerators $g \in \mathcal{G}$ \quad \textbar \quad Latency SLA $T_{\max}$
+% ==================== STAGE 1: INPUTS ====================
+\node[card=blue, minimum width=5.6cm, minimum height=5.0cm] (col1) {
+    {\head{blue}{1. Workload \& Cluster Inputs}}\\[0.5em]
+    \begin{tabular}{l}
+    \textbf{LLM Workload} $x = (m, s) \in \mathcal{X}$:\\
+    \quad $\bullet$ Parameters $N_{\text{params}}$, Layers $L$, Heads $N_h$\\
+    \quad $\bullet$ Serving Scenario $s \in \{\text{server}, \text{offline}\}$\\[0.5em]
+    \textbf{Candidate GPUs} $g \in \mathcal{G}$ (8 Architectures):\\
+    \quad $\bullet$ Bandwidth $B_{\text{mem}}$, Peak TFLOPS $F_{\text{peak}}$\\
+    \quad $\bullet$ Thermal Design Power $TDP(g)$\\[0.5em]
+    \textbf{Operational SLA Constraint}:\\
+    \quad $\bullet$ Latency Upper Bound: $T \le T_{\max}$\\
+    \quad $\bullet$ Confidence Guarantee: $1 - \alpha \ge 90\%$
+    \end{tabular}
 };
 
-% Middle Left: Roofline
-\node[box=blue, below left=1.3cm and 0.2cm of orch, minimum width=6.8cm, minimum height=1.6cm] (roof) {
-    \textbf{Deterministic Microarchitectural Base}\\
-    \scriptsize Analytical Decode Roofline Latency Lower Bound:\\
-    \scriptsize $T_{\text{roof}}(x, g) = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}}(g) \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}(g)}\right)$\\
-    \scriptsize Physical Power Envelope: $P(x, g) \le TDP(g)$
+% ==================== STAGE 2: PICAN CORE ====================
+\node[card=teal, right=0.9cm of col1, minimum width=6.6cm, minimum height=5.0cm] (col2) {
+    {\head{teal}{2. Physics-Guided PICAN Core}}\\[0.5em]
+    \begin{tabular}{c}
+    \textbf{Deterministic Microarchitectural Floor}\\
+    $T_{\text{roof}} = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}}\right)$\\[0.6em]
+    \textbf{Bipartite Cross-Attention Core}\\
+    $Q = W_q w_x, \quad K = W_k h_g, \quad V = W_v h_g$\\[0.6em]
+    \textbf{Multiplicative Physics Residual}\\
+    $\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta)) \ge T_{\text{roof}}$\\[0.6em]
+    \textbf{Heteroscedastic Aleatoric Variance}\\
+    $\hat{\sigma}^2(x, g) = \exp(s_\theta(x, g))$
+    \end{tabular}
 };
 
-% Middle Right: PICAN
-\node[box=green, below right=1.3cm and 0.2cm of orch, minimum width=6.8cm, minimum height=1.6cm] (pican) {
-    \textbf{PICAN: Physics-Informed Cross-Attention}\\
-    \scriptsize Workload Encoder $E_W(x) \in \mathbb{R}^d$ \quad Hardware Encoder $E_H(g) \in \mathbb{R}^d$\\
-    \scriptsize Bipartite Cross-Attention Core: $Q = W_q w_x, K = W_k h_g, V = W_v h_g$\\
-    \scriptsize Multiplicative Exponential Residual: $\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))$\\
-    \scriptsize Heteroscedastic Aleatoric Log-Variance Head: $s_\theta = \log \hat{\sigma}^2$
-};
-
-% Conformal Calibrator
-\node[box=purple, below=3.6cm of orch, minimum width=11cm, minimum height=1.4cm] (conf) {
-    \textbf{Covariate-Shift Conformal Risk Calibrator}\\
-    \scriptsize Microarchitectural Mahalanobis Discrepancy: $d_{\text{shift}}(g, \mathcal{D}_{\text{train}}) = \sqrt{(g - \mu)^T \Sigma^{-1} (g - \mu)}$\\
-    \scriptsize Shift-Scaled Conformal Quantile: $\hat{q}_{\text{shift}}(g) = \hat{q}_{1-\alpha} \cdot (1 + \gamma \cdot \min(d_{\text{shift}}, d_{\max}))$\\
-    \scriptsize Certified Upper SLA Latency Bound: $\hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)$
-};
-
-% Bottom Left: ROAA
-\node[box=orange, below left=1.2cm and 0.1cm of conf, minimum width=6.5cm, minimum height=1.5cm] (roaa) {
+% ==================== STAGE 3: CALIBRATION & ADAPTATION ====================
+\node[card=purple, right=0.9cm of col2, minimum width=6.6cm, minimum height=5.0cm] (col3) {
+    {\head{purple}{3. Shift Calibration \& Active Probing}}\\[0.5em]
+    \begin{tabular}{c}
+    \textbf{Microarchitectural Mahalanobis Shift}\\
+    $d_{\text{shift}}(g) = \sqrt{(g - \mu)^T \Sigma^{-1} (g - \mu)}$\\[0.6em]
+    \textbf{Shift-Adjusted Conformal Bound}\\
+    $\hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)$\\[0.6em]
     \textbf{Regret-Optimal Active Acquisition (ROAA)}\\
-    \scriptsize Decision-Theoretic Boundary Utility: $\alpha_{\text{ROAA}}(x) \propto \hat{\sigma} \exp\left(-\frac{(\hat{T}-T_{\max})^2}{2\hat{\sigma}^2}\right) \frac{\hat{P}}{TDP}$\\
-    \scriptsize Minimal Calibration Budget $k \in \{1, 3, 5\}$ Measurements\\
-    \scriptsize Latent FiLM Modulation: $z_{\text{adapted}} = \gamma_k \odot z + \beta_k$
+    $\alpha_{\text{ROAA}} \propto \hat{\sigma} \exp\left(-\frac{(\hat{T}-T_{\max})^2}{2\hat{\sigma}^2}\right) \frac{\hat{P}}{TDP}$\\[0.5em]
+    $\bullet$ Rapid Calibration in $k \in \{1, 3\}$ Measurements\\
+    $\bullet$ FiLM Latent Modulation: $z_{\text{adapted}} = \gamma_k \odot z + \beta_k$
+    \end{tabular}
 };
 
-% Bottom Right: Recommendation
-\node[box=red, below right=1.2cm and 0.1cm of conf, minimum width=6.5cm, minimum height=1.5cm] (recom) {
-    \textbf{SLA-Constrained Hardware Selector}\\
-    \scriptsize Certified SLA Feasibility Filter: $\hat{T}_{\text{upper}}(x, g) \le T_{\max}$\\
-    \scriptsize Min Operational Power: $g^* = \arg\min_{g \in \mathcal{G}_{\text{feasible}}} \hat{P}(x, g)$\\
-    \scriptsize Near-Oracle Performance: SLA Violations $< 2.1\%$
+% ==================== STAGE 4: DECISION ENGINE ====================
+\node[card=red, right=0.9cm of col3, minimum width=5.8cm, minimum height=5.0cm] (col4) {
+    {\head{red}{4. Energy-Optimal Selection}}\\[0.5em]
+    \begin{tabular}{c}
+    \textbf{Certified Feasibility Filter}\\
+    $\mathcal{G}_{\text{feasible}} = \{g \in \mathcal{G} \mid \hat{T}_{\text{upper}}(x, g) \le T_{\max}\}$\\[0.6em]
+    \textbf{Constrained Optimization}\\
+    $g^* = \arg\min_{g \in \mathcal{G}_{\text{feasible}}} \hat{P}(x, g)$\\[0.7em]
+    \textbf{Empirical Results (4,163 Configs)}\\
+    \begin{tabular}{ll}
+    $\bullet$ ITL Error Reduction: & \textbf{45.7\%} (11.3\% $\to$ 6.1\%)\\
+    $\bullet$ SLA Violations: & \textbf{26.7\% $\to$ 2.1\%}\\
+    $\bullet$ Profiling Overhead: & \textbf{$>$95\% Reduction}
+    \end{tabular}
+    \end{tabular}
 };
 
-% Arrows
-\draw[arrow] (orch.south -| roof.north) -- (roof.north) node[midway, labelbox] {Hardware $g$ \& Workload $x$};
-\draw[arrow] (orch.south -| pican.north) -- (pican.north) node[midway, labelbox] {Hardware $g$ \& Workload $x$};
+% ==================== ARROWS ====================
+\draw[arrow] (col1) -- (col2) node[midway, above, font=\scriptsize\bfseries, text=black!75] {$x, g$};
+\draw[arrow] (col2) -- (col3) node[midway, above, font=\scriptsize\bfseries, text=black!75] {$\hat{T}, \hat{\sigma}$};
+\draw[arrow] (col3) -- (col4) node[midway, above, font=\scriptsize\bfseries, text=black!75] {$\hat{T}_{\text{upper}}$};
 
-\draw[arrow] (roof.south) -- (conf.north -| roof.south) node[midway, labelbox] {Physical Floor $T_{\text{roof}}$};
-\draw[arrow] (pican.south) -- (conf.north -| pican.south) node[midway, labelbox] {Residual $r_\theta$, Uncertainty $\hat{\sigma}$};
+\end{tikzpicture}%
+}
 
-\draw[arrow] (conf.south -| roaa.north) -- (roaa.north) node[midway, labelbox] {Shift $d_{\text{shift}} > \tau$ (Few-Shot Trigger)};
-\draw[arrow] (conf.south -| recom.north) -- (recom.north) node[midway, labelbox] {Certified SLA Bound $\hat{T}_{\text{upper}}$};
-
-\draw[dasharrow] (roaa.east) -- (recom.west) node[midway, labelbox] {Calibrated $\hat{P}, \hat{T}$};
-
-\end{tikzpicture}
+\vspace{0.6em}
+\begin{center}
+\footnotesize \textit{Sustainable Computing: Informatics and Systems} (Elsevier) \quad $\bullet$ \quad Research Article \quad $\bullet$ \quad Open Science Reproduction Package
+\end{center}
 
 \end{document}

@@ -125,15 +125,19 @@ p:first-of-type, h1 + p, h2 + p, h3 + p, .no-indent {
 
 table {
     width: 100%;
+    max-width: 100%;
     border-collapse: collapse;
     margin: 14px 0;
-    font-size: 9pt;
+    font-size: 8.5pt;
     page-break-inside: avoid;
+    table-layout: auto;
+    word-break: normal;
 }
 
 th, td {
-    padding: 6px 10px;
+    padding: 5px 8px;
     text-align: left;
+    word-wrap: break-word;
 }
 
 th {
