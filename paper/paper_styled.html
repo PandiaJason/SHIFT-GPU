@@ -1600,54 +1600,42 @@ certified SLA compliance with negligible overhead.</p>
 <hr />
 <h2 id="threats-to-validity-and-limitations">8. Threats to Validity and
 Limitations</h2>
-<ol type="1">
-<li><strong>Conformal Exchangeability Gap under Hardware Domain
-Shift:</strong> Standard inductive conformal prediction provides exact
-<span class="math inline">\((1-\alpha)\)</span> coverage guarantees
-under the exchangeability of calibration and test data (<span
-class="math inline">\(P_{\text{cal}} = P_{\text{test}}\)</span>). When
-evaluating an entirely novel accelerator architecture under LOGO
-cross-validation, microarchitectural domain shift (<span
-class="math inline">\(d_{\text{shift}} &gt; 0\)</span>) fundamentally
-violates strict exchangeability. In our empirical evaluation, this
-covariate shift results in an empirical upper-bound coverage of 86.8%
-(and 75.4% pointwise test coverage) against the nominal 90.0% confidence
-level. While scaling conformal non-conformity scores by
-microarchitectural Mahalanobis distance significantly mitigates
-under-coverage compared to uncalibrated baselines (71.4%), guaranteed
-finite-sample coverage on novel hardware without target-domain data
-remains an open theoretical challenge. Incorporating a small active
-profiling budget (<span class="math inline">\(k \ge 1\)</span>) provides
-the necessary target support to close this gap.</li>
-<li><strong>Hardware Architecture Scope:</strong> Our empirical
-validation utilizes 8 server-grade NVIDIA accelerator architectures.
-While these GPUs represent the dominant production footprint in
-contemporary data centers, evaluating cross-vendor accelerators (e.g.,
-AMD Instinct MI300X, Google TPU v5e) represents an important direction
-for future validation.</li>
-<li><strong>Software Stack Homogeneity:</strong> Telemetry traces were
-collected using vLLM under FP16/BF16 precision. Variations across
-serving runtimes (e.g., TensorRT-LLM, TGI) and dynamic quantization
-schemes (FP8, INT4 AWQ) introduce software overhead shifts that should
-be incorporated into future iterations of the workload encoder.</li>
-</ol>
+<p><strong>Calibration under hardware shift:</strong> Split conformal
+prediction provides finite-sample marginal coverage of at least <span
+class="math inline">\(1-\alpha\)</span> under exchangeability of the
+calibration and test examples. In our leave-one-GPU-out evaluation,
+calibration and test examples come from different GPU populations, so
+exchangeability cannot be assumed. The measured coverage was 86.8% for
+the upper latency bound and 75.4% for the two-sided interval, both below
+the nominal 90% target. The Mahalanobis adjustment is an empirical
+heuristic. A positive hardware distance describes a difference in
+hardware features and does not by itself establish a violation of
+exchangeability. Target-GPU profiling may help calibration, but the
+current experiments do not establish that a small profiling budget
+restores nominal coverage.</p>
+<p><strong>Hardware scope:</strong> The benchmark covers eight NVIDIA
+GPU models. Holding out one GPU model can leave other members of its
+architecture family in training. Generalization to unseen architecture
+families and other accelerator vendors remains to be evaluated.</p>
+<p><strong>Software stack:</strong> The benchmark uses vLLM with
+FP16/BF16 precision. External validity across serving runtimes and
+lower-precision formats remains to be evaluated.</p>
 <hr />
 <h2 id="conclusion">9. Conclusion</h2>
-<p>Reliable hardware accelerator selection for LLM serving is a
-foundational problem in sustainable cloud infrastructure. In this paper,
-we introduced <strong>SHIFT-GPU</strong>, a physics-guided, shift-aware,
-and risk-calibrated machine learning framework. By coupling a
-deterministic microarchitectural Roofline latency bound with bipartite
-cross-attention (PICAN), group-covariate conformal calibration, and
-regret-optimal active profiling (ROAA), SHIFT-GPU overcomes the
-catastrophic degradation of prior metadata models on unfamiliar
-accelerators. Rigorous empirical validation across 4,163 real-world
-production configurations under an automated zero-leakage blinding
-protocol demonstrates that SHIFT-GPU’s primary strength is superior
-zero-shot latency prediction: reducing unseen-hardware latency error
-from 12.16% to 7.02% MdAPE (a 42.3% relative error reduction over
-matched XGBoost), while eliminating SLA violations (0 out of 125
-accepted workloads) and cutting profiling overhead by over 95%.</p>
+<p>We presented SHIFT-GPU, a framework for predicting LLM inference
+latency and selecting accelerators under latency and power constraints.
+In leave-one-GPU-out evaluation across 4,163 benchmark configurations,
+SHIFT-GPU achieved 7.02% median absolute percentage error for
+inter-token latency, compared with 12.16% for matched XGBoost, a 42.3%
+relative reduction.</p>
+<p>In offline replay at a 35 ms latency threshold, both the point
+predictor and the calibrated SHIFT-GPU policy recorded zero violations
+across 125 accepted workloads. At 20 ms, the point predictor recorded 8
+violations among 125 accepted workloads. The calibrated policy recorded
+zero among 123 accepted workloads, abstained on two, and used 1.36 W
+more mean power among accepted workloads. These results quantify the
+trade-off between latency risk, admission, and power on the evaluated
+benchmark.</p>
 <hr />
 <h2 id="credit-authorship-contribution-statement">CRediT Authorship
 Contribution Statement</h2>
@@ -1669,13 +1657,25 @@ project repository at:
 <code>https://github.com/anonymous-submission/shift-gpu</code>.</p>
 <hr />
 <h2 id="author-biographies">Author Biographies</h2>
-<p><strong>Jason Pandian</strong> received his B.E. degree in Computer
-Science and Engineering and M.E. degree in Information Technology. He is
-currently pursuing his Ph.D. degree in the Department of Information
-Technology at Nehru Institute of Technology, Coimbatore, Tamil Nadu,
-India. His research interests include distributed AI infrastructure, GPU
-computing, sustainable cloud data centers, deep learning performance
-modeling, and uncertainty quantification.</p>
+<p><strong>Jason Pandian</strong> received his B.E. and M.E. degrees in
+Computer Science and Engineering from Anna University, Chennai, India.
+He is currently an Assistant Professor in the Department of Information
+Technology at the Nehru Institute of Technology, Coimbatore, India, and
+a confirmed part-time Ph.D. research scholar under the Faculty of
+Computer Science and Information Engineering at Anna University,
+Chennai, India. Officially approved by the Doctoral Committee to proceed
+with his research, his doctoral thesis focuses on mitigating challenges
+in deep-space networking, specifically optimizing routing protocols,
+congestion dynamics, and delay-tolerant architectures. He has presented
+lightning talks on astrodynamics modeling and geospatial propagation
+models at the Workshop on ns-3 (WNS-3 2024, Barcelona, Spain) and the
+International Conference on ns-3 (ICNS-3 2025, Ritsumeikan, Japan). He
+is the recipient of the Best Faculty of the Year (2024) award at Nehru
+Institute of Technology and the Best Researcher Award (2025) at the
+ICNGTS International Conference. His research and instructional
+interests include deep-space communication routing, digital twin
+frameworks, programming paradigms, and data structures and algorithms
+(DSA).</p>
 <hr />
 <h2 id="references">References</h2>
 <ol type="1">
