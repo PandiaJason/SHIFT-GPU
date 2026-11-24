@@ -14,7 +14,24 @@
 \usepackage{tabularx}
 \usepackage{lineno}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shadows, fit}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shadows, fit, backgrounds}
+
+% Custom Palette for Publication-Grade TikZ Architecture
+\definecolor{bannerbg}{RGB}{24, 33, 47}
+\definecolor{cblue}{RGB}{37, 99, 235}
+\definecolor{cbluebg}{RGB}{239, 246, 255}
+\definecolor{cteal}{RGB}{13, 148, 136}
+\definecolor{ctealbg}{RGB}{240, 253, 250}
+\definecolor{cpurple}{RGB}{124, 58, 237}
+\definecolor{cpurplebg}{RGB}{245, 243, 255}
+\definecolor{cgreen}{RGB}{22, 163, 74}
+\definecolor{cgreenbg}{RGB}{240, 253, 244}
+\definecolor{camber}{RGB}{217, 119, 6}
+\definecolor{camberbg}{RGB}{255, 251, 235}
+\definecolor{cred}{RGB}{220, 38, 38}
+\definecolor{credbg}{RGB}{254, 242, 242}
+\definecolor{ctxtdark}{RGB}{15, 23, 42}
+\definecolor{ctxtgray}{RGB}{71, 85, 105}
 
 \journal{Sustainable Computing: Informatics and Systems}
 
@@ -136,8 +153,336 @@ where $\mathbb{I}(\cdot)$ is the indicator function and $\lambda_{\text{SLA}} \g
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{figures/fig1_architecture.png}
-\caption{Modular software architecture and data-flow diagram of the SHIFT-GPU framework. The orchestrator coordinates: (1) Workload and candidate hardware specification spaces; (2) The dual-path PICAN physics-informed cross-attention core combining a deterministic microarchitectural Roofline floor with bipartite cross-attention (MCA); (3) Microarchitectural Mahalanobis covariate shift and empirical conformal risk calibration; and (4) SLA-constrained hardware selection with the Regret-Optimal Active Acquisition (ROAA) few-shot adaptation loop.}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    x=1cm, y=1cm,
+    font=\sffamily,
+    >=Stealth,
+    stage/.style 2 args={
+        draw=#1,
+        fill=#2,
+        line width=1.2pt,
+        rounded corners=5pt
+    },
+    header/.style={
+        fill=#1,
+        text=white,
+        font=\bfseries\footnotesize,
+        inner sep=3.5pt,
+        rounded corners=3pt
+    },
+    card/.style={
+        draw=#1!60!black,
+        fill=white,
+        line width=0.8pt,
+        rounded corners=3pt,
+        inner sep=3.5pt
+    },
+    subhead/.style={
+        font=\bfseries\scriptsize,
+        text=#1
+    },
+    itemtext/.style={
+        font=\tiny,
+        text=ctxtdark
+    },
+    badge/.style={
+        fill=#1!15,
+        draw=#1,
+        line width=0.6pt,
+        rounded corners=2pt,
+        font=\bfseries\tiny,
+        inner sep=1.8pt,
+        text=#1!90!black
+    },
+    flowarrow/.style={
+        -{Stealth[length=2.5mm,width=1.8mm]},
+        line width=1.2pt,
+        draw=#1
+    },
+    dasharrow/.style={
+        -{Stealth[length=2.5mm,width=1.8mm]},
+        line width=1.1pt,
+        dashed,
+        draw=#1
+    }
+]
+
+% ==============================================================================
+% 0. TOP BANNER
+% ==============================================================================
+\draw[fill=bannerbg, draw=black, line width=1pt, rounded corners=4pt] (0, 9.4) rectangle (21.2, 10.15);
+\node[text=white, font=\bfseries\small, anchor=west] at (0.35, 9.77) {SHIFT-GPU: Physics-Guided, Shift-Aware, and Risk-Calibrated LLM Hardware Selection Architecture};
+\node[text=white!70, font=\scriptsize, anchor=east] at (20.85, 9.77) {Production Admission Controller \& Decision Pipeline};
+
+% ==============================================================================
+% STAGE 1: SPECIFICATION & INPUT SPACE (X: 0 to 4.5)
+% ==============================================================================
+\draw[stage={cblue}{cbluebg}] (0, 0) rectangle (4.6, 9.15);
+\node[header=cblue, anchor=north west] at (0.15, 9.0) {\parbox{4.3cm}{\centering 1. Specification Space}};
+
+% Workload Card
+\node[card=cblue, anchor=north west] at (0.2, 8.35) {
+    \parbox{4.0cm}{
+        \textcolor{cblue}{\textbf{\scriptsize Workload Spec $x = (m, s) \in \mathcal{X}$}}\\[0.2em]
+        \textbf{\tiny Model Geometry Parameters $m$:}\\
+        \tiny $\bullet$ Parameters: $N_{\text{params}}$ (124M -- 27B)\\
+        \tiny $\bullet$ Hidden Dim $H$, Layers $L$, Heads $N_h$\\
+        \tiny $\bullet$ KV-Cache Footprint: $C_{\text{kv}}$\\
+        \textbf{\tiny Operational Serving Scenario $s$:}\\
+        \tiny $\bullet$ Concurrency Scaling: $B(s)$\\
+        \tiny $\bullet$ Mode: \textit{Offline Batch} vs \textit{Server Arrivals}
+    }
+};
+
+% Hardware Card
+\node[card=cblue, anchor=north west] at (0.2, 5.35) {
+    \parbox{4.0cm}{
+        \textcolor{cblue}{\textbf{\scriptsize Hardware Pool $g \in \mathcal{G}$ (8 Types)}}\\[0.2em]
+        \textbf{\tiny Microarchitectural Specifications:}\\
+        \tiny $\bullet$ Memory Bandwidth: $B_{\text{mem}}$ (GB/s)\\
+        \tiny $\bullet$ Peak Compute: $F_{\text{peak}}$ (TFLOPS)\\
+        \tiny $\bullet$ VRAM Capacity: $M_{\text{size}}$ (16 -- 141 GB)\\
+        \tiny $\bullet$ Thermal Design Power: $TDP(g)$\\
+        \tiny $\bullet$ Architecture: Volta, Turing, Ampere, Ada, Hopper\\[0.2em]
+        \textbf{\tiny Evaluated Target Hardware:}\\
+        \tiny $\bullet$ Unseen Target GPU $g_{\text{target}}$ (Zero-Shot LOGO)
+    }
+};
+
+% Policy & Quarantine Card
+\node[card=cblue, anchor=north west] at (0.2, 2.25) {
+    \parbox{4.0cm}{
+        \textcolor{cblue}{\textbf{\scriptsize Operational Constraints}}\\[0.2em]
+        \tiny $\bullet$ Target Latency SLA: $T_{\max} \in [20, 40]$\,ms\\
+        \tiny $\bullet$ Nominal Coverage Target: $1 - \alpha = 90\%$\\
+        \tiny $\bullet$ Profiling Budget: $k \in \{1, 3, 5\}$ Probes\\[0.3em]
+        \centering
+        \begin{tikzpicture}
+            \node[badge=cred, text width=3.4cm, align=center] {
+                \textbf{\tiny Zero-Leakage Blinding Quarantine}\\
+                \tiny Targets Wiped to NaN Prior to Lock;\\
+                \tiny Matched within Numerical Tolerance
+            };
+        \end{tikzpicture}
+    }
+};
+
+% ==============================================================================
+% STAGE 2: PICAN DUAL-PATH PHYSICS CORE (X: 5.0 to 11.2)
+% ==============================================================================
+\draw[stage={cteal}{ctealbg}] (5.0, 0) rectangle (11.2, 9.15);
+\node[header=cteal, anchor=north west] at (5.15, 9.0) {\parbox{5.9cm}{\centering 2. PICAN: Physics-Informed Cross-Attention Engine}};
+
+% Sub-block 2A: Deterministic Roofline Floor (Top)
+\node[card=cteal, anchor=north west] at (5.2, 8.35) {
+    \parbox{5.6cm}{
+        \textcolor{cteal}{\textbf{\scriptsize Path A: Deterministic Microarchitectural Roofline Floor}}\\[0.1em]
+        \tiny Analytical Memory-Bandwidth Streaming Lower Bound:
+        $$\textstyle T_{\text{roof}}(x, g) = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}}(g) \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}(g)}\right)$$
+        \vspace{-0.6em}
+        \begin{center}
+        \begin{tikzpicture}[x=1cm, y=1cm]
+            % Mini Roofline Diagram in TikZ
+            \draw[->, thick, ctxtgray] (0,0) -- (3.2,0) node[right, font=\tiny] {$I$};
+            \draw[->, thick, ctxtgray] (0,0) -- (0,1.3) node[above, font=\tiny] {Perf};
+            % Roofline line
+            \draw[line width=1.2pt, cteal] (0,0) -- (1.0, 1.0) -- (3.0, 1.0);
+            \node[font=\tiny, cteal, anchor=south] at (2.0, 1.0) {$F_{\text{peak}}$ Ceiling};
+            \node[font=\tiny, cteal, rotate=45, anchor=south] at (0.5, 0.5) {$B_{\text{mem}} B(s)$};
+            % Decode mark
+            \draw[dashed, cred, line width=0.9pt] (0.35, 0) -- (0.35, 0.95);
+            \fill[cred] (0.35, 0.35) circle (1.8pt);
+            \node[font=\tiny, cred, anchor=west] at (0.38, 0.45) {\textbf{Decode: $I \ll 1$}};
+        \end{tikzpicture}
+        \end{center}
+        \vspace{-0.5em}
+        \tiny $\bullet$ Hard Physical Envelope: $P(x, g) \le TDP(g)$\\
+        \tiny $\bullet$ Non-bypassable constraint: Execution cannot violate bus physics.
+    }
+};
+
+% Sub-block 2B: Bipartite Cross-Attention Core (Middle)
+\node[card=cteal, anchor=north west] at (5.2, 4.35) {
+    \parbox{5.6cm}{
+        \textcolor{cteal}{\textbf{\scriptsize Path B: Bipartite Microarchitectural Cross-Attention (MCA)}}\\[0.1em]
+        \tiny Workload Query $Q = W_q E_W(x)$, Hardware Key $K = W_k E_H(g)$, Value $V = W_v E_H(g)$
+        $$\textstyle A = \text{Softmax}\left(\frac{Q K^T}{\sqrt{d}}\right) \in \mathbb{R}^{d \times d}, \quad z = \text{LayerNorm}(w_x + A V)$$
+        \vspace{-0.6em}
+        \begin{center}
+        \begin{tikzpicture}[x=1cm, y=1cm]
+            % Mini Bipartite Attention Grid
+            \foreach \i/\x/\label in {1/0/N_p, 2/0.6/H, 3/1.2/L, 4/1.8/C_{kv}} {
+                \node[fill=cblue!20, draw=cblue, rounded corners=1pt, inner sep=1.2pt, font=\tiny] (w\i) at (\x, 0.9) {$\label$};
+            }
+            \foreach \i/\x/\label in {1/0/B_{\text{m}}, 2/0.6/F_{\text{pk}}, 3/1.2/TDP, 4/1.8/A_{\text{gen}}} {
+                \node[fill=cteal!20, draw=cteal, rounded corners=1pt, inner sep=1.2pt, font=\tiny] (h\i) at (\x, 0) {$\label$};
+            }
+            % Dense cross-attention lines with varying opacity
+            \draw[cteal!80, line width=1.1pt] (w1) -- (h1);
+            \draw[cteal!40, line width=0.5pt] (w1) -- (h2);
+            \draw[cteal!90, line width=1.3pt] (w2) -- (h2);
+            \draw[cteal!50, line width=0.6pt] (w3) -- (h3);
+            \draw[cteal!70, line width=1.0pt] (w4) -- (h1);
+            \node[font=\tiny, cteal!90!black, anchor=west] at (2.2, 0.45) {\parbox{2.4cm}{\textbf{Workload-GPU Affinities}: Maps geometry to compute pipelines}};
+        \end{tikzpicture}
+        \end{center}
+    }
+};
+
+% Recombination Junction (Bottom)
+\node[card=cteal, anchor=north west] at (5.2, 1.55) {
+    \parbox{5.6cm}{
+        \textcolor{cteal}{\textbf{\scriptsize Multiplicative Physics Residual Recombination}}\\[0.1em]
+        $$\textstyle \hat{T}(x, g) = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta)) \ge T_{\text{roof}}$$
+        \tiny $\bullet$ Operational Power Head: $\hat{P}(x, g) = TDP(g) \cdot \text{sigmoid}(p_\theta(z))$\\
+        \tiny $\bullet$ Heteroscedastic Uncertainty Head: $s_\theta = \log \hat{\sigma}^2(x, g)$
+    }
+};
+
+% ==============================================================================
+% STAGE 3: COVARIATE-SHIFT CONFORMAL RISK CALIBRATOR (X: 11.6 to 16.0)
+% ==============================================================================
+\draw[stage={cpurple}{cpurplebg}] (11.6, 0) rectangle (16.2, 9.15);
+\node[header=cpurple, anchor=north west] at (11.75, 9.0) {\parbox{4.3cm}{\centering 3. Conformal Risk Calibrator}};
+
+% Mahalanobis Box
+\node[card=cpurple, anchor=north west] at (11.8, 8.35) {
+    \parbox{4.0cm}{
+        \textcolor{cpurple}{\textbf{\scriptsize Mahalanobis Discrepancy}}\\[0.1em]
+        \tiny Quantifies shift from training accelerator manifold:
+        $$\textstyle d_{\text{shift}}(g) = \sqrt{(g - \mu_{\text{tr}})^T \Sigma_{\text{tr}}^{-1} (g - \mu_{\text{tr}})}$$
+        \vspace{-0.6em}
+        \begin{center}
+        \begin{tikzpicture}[x=1cm, y=1cm]
+            % Mini Manifold Ellipse
+            \draw[fill=cpurple!15, draw=cpurple, dashed] (1.0, 0.6) ellipse (0.9cm and 0.5cm);
+            \fill[cpurple] (0.7, 0.7) circle (1.5pt);
+            \fill[cpurple] (1.2, 0.5) circle (1.5pt);
+            \fill[cpurple] (0.9, 0.4) circle (1.5pt);
+            \node[font=\tiny, cpurple] at (1.0, 0.6) {$\mathcal{D}_{\text{train}}$};
+            % Unseen GPU
+            \fill[cred] (2.4, 0.9) circle (2.0pt) node[right, font=\tiny, cred] {$g_{\text{target}}$};
+            \draw[->, cred, line width=0.9pt] (1.3, 0.7) -- (2.3, 0.9) node[midway, above, font=\tiny] {$d_{\text{shift}}$};
+        \end{tikzpicture}
+        \end{center}
+    }
+};
+
+% Quantile Scaling Box
+\node[card=cpurple, anchor=north west] at (11.8, 5.0) {
+    \parbox{4.0cm}{
+        \textcolor{cpurple}{\textbf{\scriptsize Shift-Adjusted Conformal Quantile}}\\[0.1em]
+        \textbf{\tiny Disjoint Calibration Set Non-Conformity:}\\
+        \tiny Scores $s_i = |y_i - \hat{y}_i| / \hat{\sigma}_i$ on source split:
+        $$\textstyle \hat{q}_{1-\alpha} = \text{Quantile}_{\frac{\lceil (n+1)(1-\alpha) \rceil}{n}}\left(\{s_i\}\right)$$
+        \textbf{\tiny Empirical Covariate Shift Scaling:}\\
+        $$\textstyle \hat{q}_{\text{shift}} = \hat{q}_{1-\alpha} (1 + \gamma_{\text{shift}} \min(d_{\text{shift}}, d_{\max}))$$
+        \tiny $\bullet$ Empirical Heuristic under Shift\\
+        \tiny $\bullet$ Observed Upper Coverage: 86.8\%
+    }
+};
+
+% Empirical Upper Latency Bound Box
+\node[card=cpurple, anchor=north west] at (11.8, 2.0) {
+    \parbox{4.0cm}{
+        \textcolor{cpurple}{\textbf{\scriptsize Empirical Upper Latency Bound}}\\[0.1em]
+        $$\textstyle \hat{T}_{\text{upper}} = \hat{T} + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}$$
+        \vspace{-0.6em}
+        \begin{center}
+        \begin{tikzpicture}[x=1cm, y=1cm]
+            % Mini Normal Distribution Curve
+            \draw[->, thick, ctxtgray] (0,0) -- (3.2,0) node[right, font=\tiny] {$T$};
+            \draw[domain=0.2:3.0, smooth, variable=\x, cpurple, line width=1.1pt] 
+                plot ({\x}, {1.1*exp(-((\x-1.5)^2)/0.35)});
+            \draw[fill=cpurple!25, opacity=0.7] (0.2,0) -- 
+                plot[domain=0.2:2.2, variable=\x] ({\x}, {1.1*exp(-((\x-1.5)^2)/0.35)}) 
+                -- (2.2,0) -- cycle;
+            \draw[line width=1.1pt, cred] (2.2, 0) -- (2.2, 1.1) node[above, font=\tiny, cred] {$\hat{T}_{\text{upper}}$};
+            \fill[cpurple] (1.5, 0) circle (1.5pt) node[below, font=\tiny, cpurple] {$\hat{T}$};
+        \end{tikzpicture}
+        \end{center}
+    }
+};
+
+% ==============================================================================
+% STAGE 4: ADMISSION & REGRET-OPTIMAL SELECTION (X: 16.6 to 21.2)
+% ==============================================================================
+\draw[stage={cgreen}{cgreenbg}] (16.6, 0) rectangle (21.2, 9.15);
+\node[header=cgreen, anchor=north west] at (16.75, 9.0) {\parbox{4.3cm}{\centering 4. Admission \& Adaptation}};
+
+% SLA Hardware Selector Box
+\node[card=cgreen, anchor=north west] at (16.8, 8.35) {
+    \parbox{4.0cm}{
+        \textcolor{cgreen}{\textbf{\scriptsize SLA-Constrained Hardware Selector}}\\[0.2em]
+        \textbf{\tiny 1. Empirical Feasibility Filter:}\\
+        $$\textstyle \mathcal{G}_{\text{feas}} = \{g \mid \hat{T}_{\text{upper}}(g) \le T_{\max}\}$$
+        \textbf{\tiny 2. Power Minimization Objective:}\\
+        $$\textstyle g^* = \arg\min_{g \in \mathcal{G}_{\text{feas}}} \hat{P}(x, g)$$
+        \centering
+        \begin{tikzpicture}[x=1cm, y=1cm]
+            % Mini Bar chart for power ranking
+            \draw[fill=cgreen, draw=none] (0, 0.9) rectangle (1.2, 1.15);
+            \node[font=\tiny, anchor=west] at (1.25, 1.02) {\textbf{L4 (72W) $\leftarrow g^*$}};
+            \draw[fill=ctxtgray!40, draw=none] (0, 0.55) rectangle (1.9, 0.80);
+            \node[font=\tiny, anchor=west] at (1.95, 0.67) {A30 (165W)};
+            \draw[fill=ctxtgray!25, draw=none] (0, 0.20) rectangle (2.6, 0.45);
+            \node[font=\tiny, anchor=west] at (2.65, 0.32) {L40S (350W)};
+            \draw[->, ctxtgray] (0,0) -- (3.0,0) node[right, font=\tiny] {Watts};
+        \end{tikzpicture}\\[0.2em]
+        \begin{tikzpicture}
+            \node[badge=cgreen, text width=3.4cm, align=center] {
+                \textbf{\tiny 0 SLA Violations / 125 Accepted}\\
+                \tiny (0.0\% at 35\,ms, 115.9W Mean Power)
+            };
+        \end{tikzpicture}
+    }
+};
+
+% ROAA Few-Shot Active Probing Box
+\node[card=camber, anchor=north west] at (16.8, 3.85) {
+    \parbox{4.0cm}{
+        \textcolor{camber}{\textbf{\scriptsize ROAA Active Adaptation Loop}}\\[0.1em]
+        \tiny $\bullet$ Trigger: If $d_{\text{shift}} > \tau$ \& Profiling Budget $k > 0$\\
+        \textbf{\tiny Decision-Theoretic Boundary Utility:}\\
+        $$\textstyle \alpha_{\text{ROAA}} \propto \hat{\sigma} e^{-\frac{(\hat{T}-T_{\max})^2}{2\hat{\sigma}^2}} \frac{\hat{P}}{TDP}$$
+        \vspace{-0.6em}
+        \begin{center}
+        \begin{tikzpicture}[x=1cm, y=1cm]
+            % Mini ROAA utility peak
+            \draw[->, thick, ctxtgray] (0,0) -- (3.0,0) node[right, font=\tiny] {$T$};
+            \draw[dashed, cred, line width=0.8pt] (1.5, 0) -- (1.5, 1.05) node[above, font=\tiny, cred] {$T_{\max}$};
+            \draw[domain=0.2:2.8, smooth, variable=\x, camber, line width=1.2pt]
+                plot ({\x}, {0.95*exp(-((\x-1.5)^2)/0.15)});
+            \node[font=\tiny, camber, anchor=west] at (1.6, 0.8) {$\alpha_{\text{ROAA}}$};
+        \end{tikzpicture}
+        \end{center}
+        \vspace{-0.5em}
+        \textbf{\tiny Latent FiLM Modulation:}\\
+        $$\textstyle z_{\text{adapted}} = \gamma_k \odot z + \beta_k$$
+        \tiny $\bullet$ Adapts $k$ measurements without modifying backbone weights (zero drift).
+    }
+};
+
+% ==============================================================================
+% PIPELINE CONNECTORS & FLOW ARROWS
+% ==============================================================================
+\draw[flowarrow=cblue] (4.6, 7.2) -- (5.0, 7.2);
+\draw[flowarrow=cblue] (4.6, 4.0) -- (5.0, 4.0);
+
+\draw[flowarrow=cteal] (11.2, 7.2) -- (11.6, 7.2);
+\draw[flowarrow=cteal] (11.2, 2.2) -- (11.6, 2.2) node[midway, above, font=\tiny\bfseries, cteal] {$\hat{T}, \hat{P}, \hat{\sigma}$};
+
+\draw[flowarrow=cpurple] (16.2, 6.8) -- (16.6, 6.8) node[midway, above, font=\tiny\bfseries, cpurple] {$\hat{T}_{\text{upper}}$};
+
+% ROAA Feedback arrow
+\draw[dasharrow=camber] (16.8, 1.2) -- (16.4, 1.2) -- (16.4, -0.3) -- (8.1, -0.3) -- (8.1, 0.0);
+\node[fill=camberbg, draw=camber, rounded corners=2pt, font=\tiny\bfseries, camber, inner sep=1.8pt] 
+    at (12.2, -0.3) {ROAA Few-Shot FiLM Feedback: $[\gamma_k, \beta_k]$ Latent Modulation};
+
+\end{tikzpicture}%
+}
+\caption{Modular software architecture and data-flow diagram of the SHIFT-GPU framework. The system coordinates: (1) Workload and candidate hardware specification spaces under a zero-leakage blinding protocol; (2) The dual-path PICAN physics-informed cross-attention core combining a deterministic microarchitectural Roofline floor with bipartite cross-attention (MCA); (3) Microarchitectural Mahalanobis covariate shift and empirical conformal risk calibration; and (4) SLA-constrained hardware selection with the Regret-Optimal Active Acquisition (ROAA) few-shot adaptation loop.}
 \label{fig:architecture}
 \end{figure*}
 
