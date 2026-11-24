@@ -221,6 +221,30 @@ def main():
     df_logo_itl.to_csv(os.path.join(RESULTS_DIR, "table_e2_logo_pican_itl.csv"), index=False)
     df_logo_power.to_csv(os.path.join(RESULTS_DIR, "table_e2_logo_pican_power.csv"), index=False)
 
+    # Compute matched XGBoost LOGO baseline predictions for side-by-side empirical plotting
+    print("Computing matched XGBoost LOGO baseline predictions...")
+    from xgboost import XGBRegressor
+    from scripts.reproduce_baseline import _build_pipeline
+    xgb_itl = XGBRegressor(max_depth=5, reg_lambda=100, n_estimators=100, random_state=42)
+    xgb_preds = np.zeros(len(df))
+    X_xgb = df.drop(columns=["itl", "gpu_0_power_draw_watts_mean", "normalized_power_draw"], errors="ignore")
+    for train_idx, test_idx in logo.split(X_xgb, y_itl, groups=groups):
+        pipe = _build_pipeline(X_xgb.iloc[train_idx], xgb_itl)
+        pipe.fit(X_xgb.iloc[train_idx], np.log(y_itl[train_idx]))
+        xgb_preds[test_idx] = np.exp(pipe.predict(X_xgb.iloc[test_idx]))
+
+    # Save detailed sample-level empirical predictions across all 4,163 workloads
+    df_preds = df.copy()
+    df_preds["itl_true"] = y_itl
+    df_preds["itl_pred_pican"] = preds_pican_itl
+    df_preds["itl_pred_xgb"] = xgb_preds
+    df_preds["itl_roofline"] = t_roof
+    df_preds["power_true"] = y_power
+    df_preds["power_pred_pican"] = preds_pican_power
+    df_preds["std_itl"] = all_std_itl
+    df_preds["hw_shift_score"] = hw_shift_scores
+    df_preds.to_csv(os.path.join(RESULTS_DIR, "empirical_predictions.csv"), index=False)
+
     overall_pican_itl = evaluate_predictions(y_itl, preds_pican_itl, df)
     overall_pican_power = evaluate_predictions(y_power, preds_pican_power, df)
     print("\n--- OVERALL ZERO-SHOT PICAN RESULTS ---")
