@@ -13,7 +13,7 @@ $^*$ *Corresponding Author: pandiajason@gmail.com*
 * Reduces unseen GPU latency prediction error from 12.16% to 7.02% over tree models.
 * PICAN couples roofline physics with cross-attention to constrain latency error.
 * Modern accelerators (L4, A30, H200, L40S) achieve 4.3%–6.7% zero-shot latency MdAPE.
-* Zero-leakage protocol verified via bit-for-bit NaN-blinded target testing.
+* Zero-leakage protocol verified: predictions match within numerical tolerance.
 * Calibrated policy avoids violations under tight SLAs in offline replay.
 
 ---
@@ -45,7 +45,7 @@ To resolve this fundamental gap, this paper presents **SHIFT-GPU**, an end-to-en
 2. **Microarchitectural Bipartite Cross-Attention:** Rather than concatenating tabular vectors into flat multi-layer perceptrons, PICAN projects workload parameters and hardware specifications into distinct latent sub-manifolds, using cross-attention ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) to dynamically model how memory access patterns intersect with accelerator memory controllers and execution pipelines.
 3. **Covariate-Shift Conformal Risk Calibration:** We formalize group-conditional conformal prediction adjusted for microarchitectural Mahalanobis distance in hardware specification space, bounding tail latency risk under hardware distribution shift without heuristic hand-tuning.
 4. **Regret-Optimal Active Acquisition (ROAA):** We formulate a decision-theoretic active learning policy for few-shot hardware calibration. Unlike standard active learning methods that passively target maximum statistical variance, ROAA prioritizes probing configurations located in the critical ambiguity region near the SLA boundary, directly informing operational hardware selection.
-5. **Comprehensive Zero-Leakage Empirical Validation:** We conduct an exhaustive evaluation across 4,163 benchmark configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures under an automated bit-for-bit NaN-blinded zero-leakage protocol. Results demonstrate that SHIFT-GPU's foremost strength is superior zero-shot latency prediction: reducing unseen-hardware error from 12.16% to 7.02% MdAPE (a 42.3% relative error reduction over matched XGBoost), while eliminating SLA violations (0 out of 125 accepted workloads) and cutting profiling overhead by over 95%.
+5. **Comprehensive Zero-Leakage Empirical Validation:** We conduct an exhaustive evaluation across 4,163 benchmark configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures under an automated NaN-blinded zero-leakage protocol where predictions matched within numerical tolerance. Results demonstrate that SHIFT-GPU's foremost strength is superior zero-shot latency prediction: reducing unseen-hardware error from 12.16% to 7.02% MdAPE (a 42.3% relative error reduction over matched XGBoost), while eliminating SLA violations (0 out of 125 accepted workloads) and cutting profiling overhead by over 95%.
 
 ---
 
@@ -57,7 +57,7 @@ Optimizing energy efficiency and carbon emissions in machine learning systems ha
 SHIFT-GPU directly builds upon and advances this body of work by providing the missing bridge: *How can an energy-aware perception layer accurately forecast performance and power on newly introduced hardware architectures where historical traces do not exist?*
 
 ### 2.2 LLM Serving Systems and Performance Characterization
-Autoregressive LLM inference consists of two distinct operational phases: the compute-bound prefill phase (processing prompt tokens in parallel) and the memory-bandwidth-bound decode phase (generating tokens sequentially) [3]. Modern serving frameworks such as vLLM [3] and DeepSpeed-Inference [8] employ PagedAttention and continuous batching to maximize hardware saturation. Despite these software advances, the underlying hardware efficiency is dictated by the classical Roofline model [9], which defines the operational boundaries between compute-limited and bandwidth-limited execution. 
+Autoregressive LLM inference consists of two distinct operational phases: the compute-bound prefill phase (processing prompt tokens in parallel) and the memory-bandwidth-bound decode phase (generating tokens sequentially) [3]. Modern serving frameworks employ specialized runtime mechanisms to maximize hardware saturation: vLLM [3] introduces PagedAttention and continuous batching for efficient KV-cache memory management, while DeepSpeed-Inference [8] leverages customized transformer execution kernels, multi-GPU tensor slicing, and memory offloading. Despite these software advances, the underlying hardware efficiency is dictated by the classical Roofline model [9], which defines the operational boundaries between compute-limited and bandwidth-limited execution. 
 
 WattGPU [4] demonstrated that tree ensembles (XGBoost) trained on public LLM parameters and static GPU specifications can predict inference power and latency across unseen GPUs. In our matched rerun under Leave-One-GPU-Out (LOGO) cross-validation, XGBoost achieves 12.16% median absolute percentage error for inter-token latency. Because standard tree models lack microarchitectural inductive biases and calibrated uncertainty intervals, their point estimates risk triggering uncalibrated SLA violations during deployment.
 
@@ -93,7 +93,7 @@ where $\mathbb{I}(\cdot)$ is the indicator function and $\lambda_{\text{SLA}} \g
 
 ## 4. The SHIFT-GPU Methodology
 
-![Figure 1: Modular software architecture and data-flow diagram of the SHIFT-GPU framework. The orchestrator coordinates deterministic physical roofline modeling, the PICAN bipartite cross-attention core, shift-adjusted conformal risk calibration, and regret-optimal active probing (ROAA) to deliver certified, energy-optimal GPU recommendations.](figures/fig1_architecture.png)
+![Figure 1: Modular software architecture and data-flow diagram of the SHIFT-GPU framework. The orchestrator coordinates deterministic physical roofline modeling, the PICAN bipartite cross-attention core, shift-adjusted conformal risk calibration, and regret-optimal active probing (ROAA) to deliver empirical latency-bounded, energy-optimal GPU recommendations.](figures/fig1_architecture.png)
 
 The SHIFT-GPU framework comprises five modular, mathematically coupled components designed to solve the constrained optimization problem, as illustrated in Figure 1.
 
@@ -123,7 +123,7 @@ $$d_{\text{shift}}(g_{\text{target}}, \mathcal{D}_{\text{train}}) = \sqrt{(g_{\t
 ### 4.4 Component D: Group-Calibrated Conformal Risk Calibration
 We scale non-conformity quantiles proportionally to microarchitectural shift:
 $$\hat{q}_{\text{shift}}(g) = \hat{q}_{1-\alpha} \cdot \left(1 + \gamma_{\text{shift}} \cdot \min\left(d_{\text{shift}}(g, \mathcal{D}_{\text{train}}), d_{\max}\right)\right)$$
-producing certified upper SLA latency bounds:
+producing empirical upper SLA latency bounds:
 $$\hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)$$
 
 ### 4.5 Component E: Regret-Optimal Active Acquisition (ROAA)
@@ -146,7 +146,7 @@ Ensure: Energy-Optimal Hardware Accelerator g*
 7:       Calibrate FiLM latent modulation parameters [gamma_k, beta_k]
 8:    end if
 9:    Predict mean latency T_hat(x, g), power P_hat(x, g), and variance sigma^2(x, g) via PICAN
-10:   Compute certified upper bound T_upper(x, g) = T_hat(x, g) + q_shift(g) * sigma(x, g)
+10:   Compute empirical upper bound T_upper(x, g) = T_hat(x, g) + q_shift(g) * sigma(x, g)
 11: end for
 12: Determine feasible candidate set G_feasible = {g in G | T_upper(x, g) <= T_max}
 13: if G_feasible is non-empty then
@@ -174,9 +174,9 @@ The benchmark population spans five architectural generations:
 7. **H100 NVL:** Hopper (2023), 94 GB HBM3, 3,940 GB/s, 835 TFLOPS, 400 W.
 8. **H200 NVL:** Hopper (2024), 141 GB HBM3e, 4,890 GB/s, 835 TFLOPS, 700 W.
 
-### 5.3 Evaluation Protocols & Strict Zero-Leakage Blinding Certification
+### 5.3 Evaluation Protocols & Strict Zero-Leakage Blinding Verification
 * **Leave-One-GPU-Out (LOGO):** 8-fold cross-validation evaluating zero-shot generalization on unfamiliar accelerators. In each fold, the remaining 7 GPUs are split into Training (80%) and Calibration (20%) sets.
-* **Zero-Leakage Target Blinding:** To certify zero data leakage, all test targets are wiped to NaN in an isolated copy; predictions and conformal bounds are mathematically verified to be bit-for-bit identical before revealing ground truth.
+* **Zero-Leakage Target Blinding:** To verify zero data leakage, all test targets are wiped to NaN in an isolated copy; predictions and empirical bounds matched within numerical tolerance against the baseline before revealing ground truth.
 * **Evaluation Metrics:** Median Absolute Percentage Error (MdAPE %), Pearson correlation ($r$), Kendall rank correlations ($\tau_{\text{GPU}}, \tau_{\text{LLM}}$), Empirical Conformal Coverage (%), Latency SLA Violation Rate (reported as violations out of accepted workloads), Mean Selected Power (W), and Operational Regret.
 
 ---

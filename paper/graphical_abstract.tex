@@ -115,15 +115,15 @@
 \node[card=red, right=0.9cm of col3, minimum width=5.8cm, minimum height=5.0cm] (col4) {
     {\head{red}{4. Energy-Optimal Selection}}\\[0.5em]
     \begin{tabular}{c}
-    \textbf{Certified Feasibility Filter}\\
+    \textbf{Empirical Feasibility Filter}\\
     $\mathcal{G}_{\text{feasible}} = \{g \in \mathcal{G} \mid \hat{T}_{\text{upper}}(x, g) \le T_{\max}\}$\\[0.6em]
     \textbf{Constrained Optimization}\\
     $g^* = \arg\min_{g \in \mathcal{G}_{\text{feasible}}} \hat{P}(x, g)$\\[0.7em]
     \textbf{Empirical Results (4,163 Configs)}\\
     \begin{tabular}{ll}
-    $\bullet$ ITL Error Reduction: & \textbf{45.7\%} (11.3\% $\to$ 6.1\%)\\
-    $\bullet$ SLA Violations: & \textbf{26.7\% $\to$ 2.1\%}\\
-    $\bullet$ Profiling Overhead: & \textbf{$>$95\% Reduction}
+    $\bullet$ ITL Error Reduction: & \textbf{42.3\%} (12.16\% $\to$ 7.02\%)\\
+    $\bullet$ SLA Violations: & \textbf{0 / 125 (0.0\% at 35\,ms)}\\
+    $\bullet$ Profiling Overhead: & \textbf{$>$95\% Reduction (ROAA)}
     \end{tabular}
     \end{tabular}
 };
