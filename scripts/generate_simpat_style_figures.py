@@ -332,10 +332,10 @@ for i, (fam_name, gpu_list) in enumerate([
         reg_min_tdp.append(r_tdp)
         
         # Policy 2: Point Estimate (XGBoost)
-        # Picks lowest predicted power among candidates predicted <= t_max
+        # Ranks eligible candidates strictly using its OWN predicted power (power_pred_xgb)
         eligible_xgb = w_sub[w_sub["itl_pred_xgb"] <= t_max]
         if len(eligible_xgb) > 0:
-            pick_xgb = eligible_xgb.sort_values("power_true").iloc[0]
+            pick_xgb = eligible_xgb.sort_values("power_pred_xgb").iloc[0]
         else:
             pick_xgb = w_sub.sort_values("itl_pred_xgb").iloc[0]
         viol_xgb = pick_xgb["itl_true"] > t_max

@@ -1,6 +1,6 @@
-policy,total_workloads,accepted_workloads,abstain_count,abstain_rate_pct,violation_count,violation_rate_pct,violation_fraction_str,mean_power_watts,mean_regret
-min_tdp,125,125,0,0.0,2,1.6,2 / 125,105.96841334784523,2.771898634772232
-xgb_point,125,125,0,0.0,1,0.8,1 / 125,113.37489081189014,10.23313500171035
-pican_point,125,125,0,0.0,0,0.0,0 / 125,113.4969376794801,10.083612878124317
-shift_gpu_calibrated,125,125,0,0.0,0,0.0,0 / 125,115.94354082537289,12.530216024017127
-oracle,125,125,0,0.0,0,0.0,0 / 125,103.41332480135577,0.0
+policy,target_sla_ms,total_workloads,accepted_workloads,abstain_count,abstain_rate_pct,violation_count,violation_rate_pct,violation_fraction_str,mean_power_watts,mean_regret
+min_tdp,35,125,125,0,0.0,2,1.6,2 / 125,105.96841334784523,2.771898634772232
+xgb_point,35,125,125,0,0.0,1,0.8,1 / 125,134.54855861896527,31.14386662123854
+pican_point,35,125,125,0,0.0,0,0.0,0 / 125,113.4969376794801,10.083612878124317
+shift_gpu_calibrated,35,125,125,0,0.0,0,0.0,0 / 125,115.94354082537289,12.530216024017127
+oracle,35,125,125,0,0.0,0,0.0,0 / 125,103.41332480135577,0.0

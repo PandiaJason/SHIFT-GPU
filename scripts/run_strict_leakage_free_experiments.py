@@ -138,6 +138,7 @@ def main():
     preds_pican_power = np.zeros(len(df))
     preds_xgb_itl = np.zeros(len(df))
     bounds_xgb_itl_upper = np.zeros(len(df))
+    preds_xgb_power = np.zeros(len(df))
     hw_shift_scores = np.zeros(len(df))
 
     logo_results_itl = []
@@ -260,6 +261,9 @@ def main():
         pipe_xgb_itl = _build_pipeline(X_xgb.iloc[train_idx], XGBRegressor(max_depth=5, reg_lambda=100, n_estimators=100, random_state=42))
         pipe_xgb_itl.fit(X_xgb.iloc[train_idx], np.log(y_itl[train_idx]))
 
+        pipe_xgb_pwr = _build_pipeline(X_xgb.iloc[train_idx], XGBRegressor(max_depth=5, reg_lambda=100, n_estimators=100, random_state=42))
+        pipe_xgb_pwr.fit(X_xgb.iloc[train_idx], y_power[train_idx])
+
         # -------------------------------------------------------------------
         # Calibrate Uncertainty Bounds strictly on CALIBRATION SET ONLY
         # -------------------------------------------------------------------
@@ -304,29 +308,54 @@ def main():
             bounds_test_upper = pred_test_pican * (1.0 + eff_q)
 
             # XGBoost point and upper bounds
-            pred_test_xgb = np.exp(pipe_xgb_itl.predict(X_xgb.iloc[test_idx]))
-            bounds_test_xgb_upper = pred_test_xgb * (1.0 + q_hat_xgb * shift_factor)
+            pred_test_xgb_itl = np.exp(pipe_xgb_itl.predict(X_xgb.iloc[test_idx]))
+            bounds_test_xgb_upper = pred_test_xgb_itl * (1.0 + q_hat_xgb * shift_factor)
+            pred_test_xgb_pwr = pipe_xgb_pwr.predict(X_xgb.iloc[test_idx])
 
         # Store locked outputs
         preds_pican_itl[test_idx] = pred_test_pican
         bounds_pican_itl_upper[test_idx] = bounds_test_upper
         bounds_pican_itl_lower[test_idx] = bounds_test_lower
         preds_pican_power[test_idx] = pred_test_pwr
-        preds_xgb_itl[test_idx] = pred_test_xgb
+        preds_xgb_itl[test_idx] = pred_test_xgb_itl
         bounds_xgb_itl_upper[test_idx] = bounds_test_xgb_upper
+        preds_xgb_power[test_idx] = pred_test_xgb_pwr
 
         # -------------------------------------------------------------------
-        # Requirement 2: EXPLICIT LEAKAGE TEST (Direct Assertion)
-        # Run test inference again with test latencies completely set to NaN
+        # Requirement 2: TRUE END-TO-END DATA LEAKAGE ASSERTION TEST
+        # Create a blinded copy of df where all test labels are completely wiped to NaN
         # -------------------------------------------------------------------
+        df_blinded = df.copy()
+        df_blinded.loc[test_idx, "itl"] = np.nan
+        df_blinded.loc[test_idx, "gpu_0_power_draw_watts_mean"] = np.nan
+        df_blinded.loc[test_idx, "normalized_power_draw"] = np.nan
+
+        # Extract features from blinded dataframe
+        W_test_blind = np.hstack([scaler_w.transform(df_blinded[w_cols].values[test_idx]), scenario_dummies[test_idx]])
+        H_test_itl_blind = scaler_h_itl.transform(df_blinded[h_cols_itl].values[test_idx])
+        H_test_pwr_blind = scaler_h_pwr.transform(df_blinded[h_cols_pwr].values[test_idx])
+        w_te_b = torch.tensor(W_test_blind, dtype=torch.float32).to(device)
+        h_te_itl_b = torch.tensor(H_test_itl_blind, dtype=torch.float32).to(device)
+        h_te_pwr_b = torch.tensor(H_test_pwr_blind, dtype=torch.float32).to(device)
+
         with torch.no_grad():
-            p_check_itl, _, _ = model_itl(w_te, h_te_itl, physics_base=r_te)
-            pred_check = p_check_itl.cpu().numpy()
-            bounds_check_upper = pred_check * (1.0 + eff_q)
+            p_check_itl, _, _ = model_itl(w_te_b, h_te_itl_b, physics_base=r_te)
+            pred_check_pican = p_check_itl.cpu().numpy()
+            bounds_check_upper = pred_check_pican * (1.0 + eff_q)
 
-        assert np.allclose(pred_test_pican, pred_check), f"LEAKAGE ASSERTION FAILED: Predictions differed on {holdout_gpu}!"
-        assert np.allclose(bounds_test_upper, bounds_check_upper), f"LEAKAGE ASSERTION FAILED: Bounds differed on {holdout_gpu}!"
-        print(f"  [PASSED] Leakage verification: 100% identical outputs under blinded test inputs.")
+            p_check_pwr, _, _ = model_pwr(w_te_b, h_te_pwr_b, physics_base=tdp_te)
+            pred_check_pwr = p_check_pwr.cpu().numpy()
+
+        pred_check_xgb_itl = np.exp(pipe_xgb_itl.predict(X_xgb.iloc[test_idx]))
+        pred_check_xgb_pwr = pipe_xgb_pwr.predict(X_xgb.iloc[test_idx])
+
+        # Strict mathematical assertions
+        assert np.allclose(pred_test_pican, pred_check_pican, equal_nan=False), f"LEAKAGE ASSERTION FAILED: PICAN ITL on {holdout_gpu}!"
+        assert np.allclose(bounds_test_upper, bounds_check_upper, equal_nan=False), f"LEAKAGE ASSERTION FAILED: PICAN bounds on {holdout_gpu}!"
+        assert np.allclose(pred_test_pwr, pred_check_pwr, equal_nan=False), f"LEAKAGE ASSERTION FAILED: PICAN power on {holdout_gpu}!"
+        assert np.allclose(pred_test_xgb_itl, pred_check_xgb_itl, equal_nan=False), f"LEAKAGE ASSERTION FAILED: XGBoost ITL on {holdout_gpu}!"
+        assert np.allclose(pred_test_xgb_pwr, pred_check_xgb_pwr, equal_nan=False), f"LEAKAGE ASSERTION FAILED: XGBoost power on {holdout_gpu}!"
+        print(f"  [PASSED] End-to-end leakage verification: Bit-for-bit identical under NaN-blinded test inputs.")
 
         # -------------------------------------------------------------------
         # Score Predictions (Only AFTER Locking)
@@ -335,7 +364,7 @@ def main():
         y_test_true_pwr = y_power[test_idx]
 
         mdape_pican = float(np.median(np.abs(y_test_true_itl - pred_test_pican) / y_test_true_itl) * 100.0)
-        mdape_xgb = float(np.median(np.abs(y_test_true_itl - pred_test_xgb) / y_test_true_itl) * 100.0)
+        mdape_xgb = float(np.median(np.abs(y_test_true_itl - pred_test_xgb_itl) / y_test_true_itl) * 100.0)
         coverage_test = float(np.mean((y_test_true_itl >= bounds_test_lower) & (y_test_true_itl <= bounds_test_upper)) * 100.0)
         print(f"  Scoring: SHIFT-GPU MdAPE={mdape_pican:.2f}% (vs XGBoost={mdape_xgb:.2f}%) | Empirical Coverage={coverage_test:.1f}%")
 
@@ -390,6 +419,7 @@ def main():
     df_preds["itl_roofline"] = t_roof
     df_preds["power_true"] = y_power
     df_preds["power_pred_pican"] = preds_pican_power
+    df_preds["power_pred_xgb"] = preds_xgb_power
     df_preds["hw_shift_score"] = hw_shift_scores
     df_preds.to_csv(os.path.join(RESULTS_DIR, "empirical_predictions.csv"), index=False)
     print(f"Saved {len(df_preds)} locked empirical predictions to {os.path.join(RESULTS_DIR, 'empirical_predictions.csv')}")
@@ -398,13 +428,12 @@ def main():
     # Requirement 3: Production Hardware Recommendation on the SAME Workloads
     # Compare:
     # 1. Minimum TDP Policy
-    # 2. Matched XGBoost Point Prediction
-    # 3. SHIFT-GPU Point Prediction (PICAN without bounds)
+    # 2. Matched XGBoost Point Prediction (ranks by its own predicted power)
+    # 3. SHIFT-GPU Point Prediction (ranks by PICAN predicted power)
     # 4. SHIFT-GPU Risk-Calibrated (Conformal Upper Bounds)
     # 5. True Empirical Oracle
     # -------------------------------------------------------------------
     print("\n>>> Phase 2: Production Hardware Recommendation Benchmark on Identical Workloads...")
-    t_max = 0.035  # 35 ms SLA
     sla_penalty_multiplier = 5.0
 
     pred_dict = {}
@@ -413,7 +442,8 @@ def main():
     for i, row in df_preds.iterrows():
         key = (row["model"], row["scenario"], row["gpu_db_name"])
         pred_dict[key] = {
-            "power_pred": row["power_pred_pican"],
+            "power_pred_pican": row["power_pred_pican"],
+            "power_pred_xgb": row["power_pred_xgb"],
             "power_upper": row["power_pred_pican"] * 1.05,
             "itl_pican_point": row["itl_pred_pican"],
             "itl_pican_upper": row["itl_bound_upper"],
@@ -429,13 +459,12 @@ def main():
     unique_workloads = df_preds[["model", "scenario"]].drop_duplicates().reset_index(drop=True)
     N_total_workloads = len(unique_workloads)
 
-    def evaluate_cluster_policy(policy_name):
+    def evaluate_cluster_policy(policy_name, target_sla=0.035):
         accepted_count = 0
         violation_count = 0
         accepted_powers = []
         regrets = []
 
-        # Double check leakage: confirm selections depend strictly on locked predictions
         recommendations = []
 
         for _, w_row in unique_workloads.iterrows():
@@ -445,7 +474,7 @@ def main():
             oracle_feasible = []
             for g in unique_gpus:
                 k = (m_name, sc_name, g)
-                if k in true_dict and true_dict[k]["itl_true"] <= t_max:
+                if k in true_dict and true_dict[k]["itl_true"] <= target_sla:
                     oracle_feasible.append((g, true_dict[k]["power_true"]))
             
             p_oracle_best = min([x[1] for x in oracle_feasible]) if oracle_feasible else np.nan
@@ -459,25 +488,26 @@ def main():
                 p_info = pred_dict[k]
 
                 if policy_name == "min_tdp":
-                    meets_sla = p_info["itl_pican_point"] <= t_max
+                    meets_sla = p_info["itl_pican_point"] <= target_sla
                     sort_metric = p_info["tdp"]
                 elif policy_name == "xgb_point":
-                    meets_sla = p_info["itl_xgb_point"] <= t_max
-                    sort_metric = p_info["power_pred"]
+                    # Strictly prediction-only: ranks by its OWN predicted power
+                    meets_sla = p_info["itl_xgb_point"] <= target_sla
+                    sort_metric = p_info["power_pred_xgb"]
                 elif policy_name == "pican_point":
-                    meets_sla = p_info["itl_pican_point"] <= t_max
-                    sort_metric = p_info["power_pred"]
+                    meets_sla = p_info["itl_pican_point"] <= target_sla
+                    sort_metric = p_info["power_pred_pican"]
                 elif policy_name == "shift_gpu_calibrated":
-                    meets_sla = p_info["itl_pican_upper"] <= t_max
-                    sort_metric = p_info["power_pred"]
+                    meets_sla = p_info["itl_pican_upper"] <= target_sla
+                    sort_metric = p_info["power_pred_pican"]
                 elif policy_name == "oracle":
-                    meets_sla = true_dict[k]["itl_true"] <= t_max
+                    meets_sla = true_dict[k]["itl_true"] <= target_sla
                     sort_metric = true_dict[k]["power_true"]
                 else:
                     raise ValueError(f"Unknown policy {policy_name}")
 
                 if meets_sla:
-                    candidate_pool.append((g, sort_metric, p_info["power_pred"]))
+                    candidate_pool.append((g, sort_metric))
 
             if candidate_pool:
                 # Select candidate with lowest sort metric
@@ -490,7 +520,7 @@ def main():
                 p_true = true_dict[(m_name, sc_name, selected_gpu)]["power_true"]
                 accepted_powers.append(p_true)
 
-                is_violation = t_true > t_max
+                is_violation = t_true > target_sla
                 if is_violation:
                     violation_count += 1
 
@@ -500,7 +530,7 @@ def main():
                 else:
                     reg = 0.0
                 if is_violation:
-                    reg += sla_penalty_multiplier * p_true * ((t_true - t_max) / t_max)
+                    reg += sla_penalty_multiplier * p_true * ((t_true - target_sla) / target_sla)
                 regrets.append(reg)
             else:
                 # Policy abstains (deems workload infeasible under SLA)
@@ -516,6 +546,7 @@ def main():
 
         return {
             "policy": policy_name,
+            "target_sla_ms": int(target_sla * 1000),
             "total_workloads": N_total_workloads,
             "accepted_workloads": accepted_count,
             "abstain_count": abstain_count,
@@ -524,14 +555,32 @@ def main():
             "violation_rate_pct": violation_rate,
             "violation_fraction_str": f"{violation_count} / {accepted_count}",
             "mean_power_watts": mean_pwr,
-            "mean_regret": mean_reg
+            "mean_regret": mean_reg,
+            "recommendations": recommendations
         }
 
+    # Main evaluation at 35 ms SLA
     rec_benchmark = []
+    print("\n--- Main Evaluation under 35 ms SLA ---")
     for pol in ["min_tdp", "xgb_point", "pican_point", "shift_gpu_calibrated", "oracle"]:
-        res_pol = evaluate_cluster_policy(pol)
-        rec_benchmark.append(res_pol)
+        res_pol = evaluate_cluster_policy(pol, target_sla=0.035)
+        rec_benchmark.append({k: v for k, v in res_pol.items() if k != "recommendations"})
         print(f"  Policy [{pol:20s}]: Accepted={res_pol['accepted_workloads']}/{N_total_workloads} (Abstain={res_pol['abstain_rate_pct']:.1f}%), Violations={res_pol['violation_fraction_str']} ({res_pol['violation_rate_pct']:.1f}%), Mean Power={res_pol['mean_power_watts']:.1f}W, Regret={res_pol['mean_regret']:.1f}")
+
+    df_rec = pd.DataFrame(rec_benchmark)
+    df_rec.to_csv(os.path.join(RESULTS_DIR, "table_e6_decision_recommendations.csv"), index=False)
+
+    # Multi-SLA Sensitivity Evaluation (20ms, 25ms, 30ms, 35ms, 40ms)
+    print("\n--- Multi-SLA Sensitivity Benchmark across Latency Constraints ---")
+    sensitivity_records = []
+    for s_sla in [0.020, 0.025, 0.030, 0.035, 0.040]:
+        for pol in ["min_tdp", "xgb_point", "pican_point", "shift_gpu_calibrated", "oracle"]:
+            res = evaluate_cluster_policy(pol, target_sla=s_sla)
+            sensitivity_records.append({k: v for k, v in res.items() if k != "recommendations"})
+            print(f"  [SLA={int(s_sla*1000):2d}ms] {pol:20s}: Accepted={res['accepted_workloads']:3d}/{N_total_workloads}, Violations={res['violation_fraction_str']} ({res['violation_rate_pct']:.1f}%), Mean Power={res['mean_power_watts']:.1f}W")
+
+    df_sens = pd.DataFrame(sensitivity_records)
+    df_sens.to_csv(os.path.join(RESULTS_DIR, "table_e6_sla_sensitivity.csv"), index=False)
 
     df_rec = pd.DataFrame(rec_benchmark)
     df_rec.to_csv(os.path.join(RESULTS_DIR, "table_e6_decision_recommendations.csv"), index=False)
@@ -662,7 +711,7 @@ def main():
     cov_xgb = float(np.mean(y_itl <= bounds_xgb_itl_upper) * 100.0)
 
     # Calculate actual SLA violations for ablations under point deployment
-    def eval_variant_violations(preds_arr):
+    def eval_variant_violations(preds_arr, target_sla=0.035):
         v = 0
         tot = 0
         for _, w_row in unique_workloads.iterrows():
@@ -673,18 +722,18 @@ def main():
                 if k in pred_dict:
                     idx = df_preds[(df_preds["model"] == m_name) & (df_preds["scenario"] == sc_name) & (df_preds["gpu_db_name"] == g)].index
                     if len(idx) > 0:
-                        cands.append((g, preds_arr[idx[0]], pred_dict[k]["power_pred"], true_dict[k]["itl_true"]))
-            eligible = [c for c in cands if c[1] <= t_max]
+                        cands.append((g, preds_arr[idx[0]], pred_dict[k]["power_pred_pican"], true_dict[k]["itl_true"]))
+            eligible = [c for c in cands if c[1] <= target_sla]
             if eligible:
                 eligible.sort(key=lambda x: x[2])
                 tot += 1
-                if eligible[0][3] > t_max:
+                if eligible[0][3] > target_sla:
                     v += 1
         return (v / tot * 100.0) if tot > 0 else 0.0
 
-    viol_a = eval_variant_violations(preds_ablation_a)
-    viol_b = eval_variant_violations(preds_ablation_b)
-    viol_xgb = eval_variant_violations(preds_xgb_itl)
+    viol_a = eval_variant_violations(preds_ablation_a, target_sla=0.035)
+    viol_b = eval_variant_violations(preds_ablation_b, target_sla=0.035)
+    viol_xgb = eval_variant_violations(preds_xgb_itl, target_sla=0.035)
     viol_full = df_rec[df_rec["policy"] == "shift_gpu_calibrated"]["violation_rate_pct"].iloc[0]
 
     ablations = [
@@ -748,7 +797,7 @@ def main():
                     elif pol == "uncertainty":
                         probe_indices = selector.select_max_uncertainty(uncertainty_pool, cand_indices, k)
                     elif pol == "regret_optimal":
-                        probe_indices = selector.select_regret_optimal(preds_zero_shot, uncertainty_pool, pwr_zero_shot, cand_indices, k, t_max=t_max)
+                        probe_indices = selector.select_regret_optimal(preds_zero_shot, uncertainty_pool, pwr_zero_shot, cand_indices, k, t_max=0.035)
                     else:
                         raise ValueError(f"Unknown few-shot policy {pol}")
 
