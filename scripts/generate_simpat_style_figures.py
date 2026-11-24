@@ -101,8 +101,8 @@ err_xgb_sorted = np.sort(err_xgb)
 err_roof_sorted = np.sort(err_roof)
 cdf_y = np.linspace(0, 1, len(err_pican))
 
-ax2.plot(err_pican_sorted, cdf_y, color=c_adapt, linewidth=2.0, label="Proposed SHIFT-GPU (MdAPE = 6.89%)")
-ax2.plot(err_xgb_sorted, cdf_y, color=c_fixed, linestyle="--", linewidth=1.8, label="WattGPU Baseline (MdAPE = 11.28%)")
+ax2.plot(err_pican_sorted, cdf_y, color=c_adapt, linewidth=2.0, label="Proposed SHIFT-GPU (MdAPE = 7.02%)")
+ax2.plot(err_xgb_sorted, cdf_y, color=c_fixed, linestyle="--", linewidth=1.8, label="WattGPU Baseline (MdAPE = 12.16%)")
 ax2.plot(err_roof_sorted, cdf_y, color=c_gray, linestyle=":", linewidth=1.5, label="Non-Learning Roofline (MdAPE = 46.2%)")
 
 ax2.set_xscale("log")
@@ -110,8 +110,8 @@ ax2.set_xlim(0.5, 200)
 ax2.set_xlabel("Relative Prediction Error (%) [log scale]", fontsize=9.5)
 ax2.set_ylabel(r"Cumulative Empirical Probability $P(\mathrm{Error} \leq e)$", fontsize=9.5)
 ax2.set_title("(b) Cumulative Error Distribution (Empirical CDF)", fontsize=10.5)
-ax2.axvline(6.89, color=c_adapt, linestyle="-.", alpha=0.7, linewidth=1.0)
-ax2.axvline(11.28, color=c_fixed, linestyle="-.", alpha=0.7, linewidth=1.0)
+ax2.axvline(7.02, color=c_adapt, linestyle="-.", alpha=0.7, linewidth=1.0)
+ax2.axvline(12.16, color=c_fixed, linestyle="-.", alpha=0.7, linewidth=1.0)
 ax2.grid(True, which="both", linestyle="--", alpha=0.35)
 ax2.legend(loc="lower right", framealpha=0.9, fontsize=8)
 
@@ -345,8 +345,8 @@ for i, (fam_name, gpu_list) in enumerate([
         reg_point.append(r_xgb)
         
         # Policy 3: Risk-Calibrated SHIFT-GPU (PICAN with Conformal Margin)
-        # Upper bound: T_hat + q_alpha * sigma
-        upper_itl = w_sub["itl_pred_pican"] * (1.0 + 1.28 * w_sub["std_itl"])
+        # Uses strictly locked out-of-fold upper bound itl_bound_upper
+        upper_itl = w_sub["itl_bound_upper"]
         eligible_pican = w_sub[upper_itl <= t_max]
         if len(eligible_pican) > 0:
             pick_pican = eligible_pican.sort_values("power_pred_pican").iloc[0]
@@ -395,7 +395,12 @@ variants = [
     "WattGPU\n(XGBoost)",
     "Without Roofline\n(Pure Neural)"
 ]
-mdape_vals = [6.89, 8.28, 11.28, 21.36]
+mdape_vals = [
+    df_ablation[df_ablation["model_variant"].str.contains("Full")]["MdAPE_ITL"].iloc[0],
+    df_ablation[df_ablation["model_variant"].str.contains("Ablation B")]["MdAPE_ITL"].iloc[0],
+    df_ablation[df_ablation["model_variant"].str.contains("Baseline C")]["MdAPE_ITL"].iloc[0],
+    df_ablation[df_ablation["model_variant"].str.contains("Ablation A")]["MdAPE_ITL"].iloc[0],
+]
 colors = [c_adapt, c_gold, c_fixed, "#7f0000"]
 
 bars = ax.bar(variants, mdape_vals, color=colors, edgecolor="black", linewidth=0.7, width=0.55)
@@ -410,14 +415,22 @@ ax.grid(axis="y", linestyle="--", alpha=0.35)
 
 # 7(b): Real Decision Engine Recommendation Trade-offs
 ax = axes[1]
+name_map_pol = {
+    "min_tdp": "Minimum TDP",
+    "xgb_point": "Point Estimate (XGB)",
+    "pican_point": "Point Estimate (PICAN)",
+    "shift_gpu_calibrated": "SHIFT-GPU (Calibrated)",
+    "oracle": "True Oracle"
+}
 for _, row in df_rec.iterrows():
-    pol_name = row["policy"].replace("_", " ").title()
+    pol_key = row["policy"]
+    pol_name = name_map_pol.get(pol_key, pol_key.replace("_", " ").title())
     pwr = row["mean_power_watts"]
     viol = row["violation_rate_pct"]
-    c = c_adapt if "Risk" in pol_name else (c_event if "Oracle" in pol_name else c_fixed)
-    m = "*" if "Oracle" in pol_name else ("D" if "Risk" in pol_name else "o")
+    c = c_adapt if "SHIFT-GPU" in pol_name else (c_event if "Oracle" in pol_name else c_fixed)
+    m = "*" if "Oracle" in pol_name else ("D" if "SHIFT-GPU" in pol_name else "o")
     ax.scatter(pwr, viol, s=140, color=c, marker=m, edgecolors="black", linewidth=1.0, label=pol_name)
-    ax.annotate(pol_name, (pwr, viol), textcoords="offset points", xytext=(8, -3), fontsize=8.5, weight="bold" if "Risk" in pol_name else "normal")
+    ax.annotate(pol_name, (pwr, viol), textcoords="offset points", xytext=(8, -3), fontsize=8.5, weight="bold" if "SHIFT-GPU" in pol_name else "normal")
 
 ax.set_xlabel("Mean Selected Cluster Power Draw (Watts)", fontsize=9.5)
 ax.set_ylabel("Latency SLA Violation Rate (%)", fontsize=9.5)

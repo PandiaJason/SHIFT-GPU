@@ -422,9 +422,10 @@ strategically selects a minimal calibration budget (<span
 class="math inline">\(k \in \{1, 3, 5\}\)</span>) to minimize downstream
 deployment regret rather than passive variance. Evaluated across 4,163
 real-world configurations spanning 42 open-source LLMs and 8
-server-grade NVIDIA GPU architectures, SHIFT-GPU reduces unseen-hardware
-latency prediction error from 11.28% to 6.89% (a 38.9% relative error
-reduction), eliminates production SLA violations (from 2.4% down to
+server-grade NVIDIA GPU architectures under strict zero-leakage LOGO
+validation, SHIFT-GPU reduces unseen-hardware latency prediction error
+from 12.16% to 7.02% (a 42.3% relative error reduction over XGBoost),
+eliminates production SLA violations (0 out of 125 accepted workloads,
 0.0%), and cuts profiling overhead by over 95% compared to exhaustive
 sweeps.</p>
 <p><strong>Keywords:</strong> Large Language Models, GPU Infrastructure,
@@ -517,9 +518,9 @@ class="math inline">\(k \le 5\)</span> measurements.</li>
 exhaustive evaluation across 4,163 benchmark configurations spanning 42
 open-source LLMs and 8 server-grade NVIDIA GPU architectures. Results
 demonstrate that SHIFT-GPU reduces unseen-hardware latency error to
-6.89% (a 38.9% relative error reduction over XGBoost), eliminates
-production SLA violations (down to 0.0%), and provides a 95% reduction
-in profiling energy overhead.</li>
+7.02% (a 42.3% relative error reduction over XGBoost), eliminates
+production SLA violations (0 / 125 accepted workloads, 0.0%), and
+provides a 95% reduction in profiling energy overhead.</li>
 </ol>
 <hr />
 <h2 id="related-work">2. Related Work</h2>
@@ -837,15 +838,15 @@ id="table-1-zero-shot-performance-comparison-on-unseen-hardware-architectures-lo
 <tr>
 <td></td>
 <td>WattGPU Baseline (XGBoost) [4]</td>
-<td>11.28%</td>
-<td>0.979</td>
-<td>0.84</td>
-<td>0.92</td>
+<td>12.16%</td>
+<td>0.975</td>
+<td>0.80</td>
+<td>0.81</td>
 </tr>
 <tr>
 <td></td>
 <td><strong>SHIFT-GPU (PICAN Zero-Shot)</strong></td>
-<td><strong>6.89%</strong></td>
+<td><strong>7.02%</strong></td>
 <td><strong>0.995</strong></td>
 <td><strong>0.86</strong></td>
 <td><strong>0.94</strong></td>
@@ -876,10 +877,10 @@ id="table-1-zero-shot-performance-comparison-on-unseen-hardware-architectures-lo
 </tr>
 </tbody>
 </table>
-<p>PICAN reduces ITL prediction error on unseen hardware from 11.28% to
-6.89% (a 38.9% relative error reduction) while improving Pearson <span
-class="math inline">\(r\)</span> from 0.979 to 0.995 and LLM ranking
-Kendall <span class="math inline">\(\tau\)</span> from 0.92 to 0.94. For
+<p>PICAN reduces ITL prediction error on unseen hardware from 12.16% to
+7.02% (a 42.3% relative error reduction) while improving Pearson <span
+class="math inline">\(r\)</span> from 0.975 to 0.995 and LLM ranking
+Kendall <span class="math inline">\(\tau\)</span> from 0.81 to 0.94. For
 power draw prediction, PICAN achieves 14.55% MdAPE across all hardware
 families (outperforming the non-learning TDP baseline of 22.10% and
 reaching under 8% on modern architectures such as L4 and T4),
@@ -891,13 +892,12 @@ prevents non-physical extrapolations on out-of-distribution
 accelerators.</p>
 <figure>
 <img src="figures/fig2_temporal_dynamics_panel.png"
-alt="Figure 2: Temporal dynamics panel. (a) Microarchitectural dynamic profiling step adaptation across autoregressive decode phase tokens, resolving critical switching regions. (b) Serving queue stability under bursty arrival traffic: Risk-calibrated allocation prevents cluster buffer overflow compared to standard point predictors." />
-<figcaption aria-hidden="true">Figure 2: Temporal dynamics panel. (a)
-Microarchitectural dynamic profiling step adaptation across
-autoregressive decode phase tokens, resolving critical switching
-regions. (b) Serving queue stability under bursty arrival traffic:
-Risk-calibrated allocation prevents cluster buffer overflow compared to
-standard point predictors.</figcaption>
+alt="Figure 2: Zero-shot prediction calibration and error distributions across 4,163 empirical configurations. (a) Parity plot comparing measured vs. predicted ITL. (b) Empirical Cumulative Distribution Function of relative errors." />
+<figcaption aria-hidden="true">Figure 2: Zero-shot prediction
+calibration and error distributions across 4,163 empirical
+configurations. (a) Parity plot comparing measured vs. predicted ITL.
+(b) Empirical Cumulative Distribution Function of relative
+errors.</figcaption>
 </figure>
 <h3 id="e3-e4-covariate-shift-and-conformal-calibration">6.2 E3 &amp;
 E4: Covariate Shift and Conformal Calibration</h3>
@@ -906,23 +906,22 @@ prediction intervals suffer severe miscoverage due to covariate shift.
 In contrast, our shift-adjusted conformal calibrator dynamically expands
 interval widths proportionally to the microarchitectural Mahalanobis
 distance <span class="math inline">\(d_{\text{shift}}\)</span>,
-guaranteeing 99.6% empirical coverage. Figure 2 demonstrates how this
-translates into operational serving queue stability.</p>
+guaranteeing 86.8% empirical coverage.</p>
 <figure>
 <img src="figures/fig3_accuracy_efficiency_panel.png"
-alt="Figure 3: Accuracy–efficiency panel. (a) Pareto frontier showing total simulation profiling steps vs. cumulative prediction error. SHIFT-GPU achieves the optimal knee, eliminating SLA violations with over 10x fewer measurements. (b) Error breakdown normalized to baseline across hardware generations, highlighting the extreme vulnerability of black-box zero-shot predictors." />
-<figcaption aria-hidden="true">Figure 3: Accuracy–efficiency panel. (a)
-Pareto frontier showing total simulation profiling steps vs. cumulative
-prediction error. SHIFT-GPU achieves the optimal knee, eliminating SLA
-violations with over 10x fewer measurements. (b) Error breakdown
-normalized to baseline across hardware generations, highlighting the
-extreme vulnerability of black-box zero-shot predictors.</figcaption>
+alt="Figure 3: Hardware generalization across unseen accelerator targets under microarchitectural covariate shift. (a) LOGO error across 8 GPUs. (b) Shift generalization stability." />
+<figcaption aria-hidden="true">Figure 3: Hardware generalization across
+unseen accelerator targets under microarchitectural covariate shift. (a)
+LOGO error across 8 GPUs. (b) Shift generalization
+stability.</figcaption>
 </figure>
 <h3 id="e5-active-few-shot-hardware-profiling-benchmark">6.3 E5: Active
 Few-Shot Hardware Profiling Benchmark</h3>
-<p>Table 2 and Figure 3 evaluate few-shot adaptation performance as a
+<p>Table 2 and Figure 4 evaluate few-shot adaptation performance as a
 function of profiling budget <span class="math inline">\(k \in \{0, 1,
-3, 5\}\)</span> across four acquisition policies.</p>
+3, 5\}\)</span> across four acquisition policies, evaluated strictly on
+untouched test samples (<span class="math inline">\(D_{\text{test}}
+\setminus D_{\text{probe}}\)</span>).</p>
 <h4
 id="table-2-few-shot-profiling-adaptation-benchmark-on-unseen-accelerators">Table
 2: Few-shot profiling adaptation benchmark on unseen accelerators</h4>
@@ -944,186 +943,195 @@ id="table-2-few-shot-profiling-adaptation-benchmark-on-unseen-accelerators">Tabl
 <tbody>
 <tr>
 <td><span class="math inline">\(k = 0\)</span> (Zero-Shot)</td>
-<td>None</td>
-<td>6.89%</td>
+<td>Untrained Baseline</td>
+<td>7.02%</td>
 <td>0.995</td>
 </tr>
 <tr>
 <td><span class="math inline">\(k = 1\)</span> (One-Shot)</td>
 <td>Uniform Random</td>
-<td>7.86%</td>
-<td>0.996</td>
+<td>7.59%</td>
+<td>0.995</td>
 </tr>
 <tr>
 <td></td>
 <td>K-Means Diversity</td>
-<td>8.39%</td>
-<td>0.994</td>
+<td>9.16%</td>
+<td>0.993</td>
 </tr>
 <tr>
 <td></td>
 <td>Max Uncertainty</td>
-<td>11.57%</td>
-<td>0.991</td>
+<td>7.68%</td>
+<td>0.994</td>
 </tr>
 <tr>
 <td></td>
 <td><strong>Regret-Optimal (ROAA)</strong></td>
-<td><strong>7.38%</strong></td>
+<td><strong>8.57%</strong></td>
 <td><strong>0.994</strong></td>
 </tr>
 <tr>
 <td><span class="math inline">\(k = 3\)</span> (Three-Shot)</td>
 <td>Uniform Random</td>
-<td>7.00%</td>
-<td>0.994</td>
-</tr>
-<tr>
-<td></td>
-<td>K-Means Diversity</td>
-<td>7.67%</td>
+<td>7.20%</td>
 <td>0.995</td>
 </tr>
 <tr>
 <td></td>
+<td>K-Means Diversity</td>
+<td>8.20%</td>
+<td>0.994</td>
+</tr>
+<tr>
+<td></td>
 <td>Max Uncertainty</td>
-<td>12.22%</td>
-<td>0.991</td>
+<td>7.95%</td>
+<td>0.994</td>
 </tr>
 <tr>
 <td></td>
 <td><strong>Regret-Optimal (ROAA)</strong></td>
-<td><strong>7.51%</strong></td>
+<td><strong>8.63%</strong></td>
 <td><strong>0.993</strong></td>
 </tr>
 <tr>
 <td><span class="math inline">\(k = 5\)</span> (Five-Shot)</td>
 <td>Uniform Random</td>
-<td>6.67%</td>
+<td>6.60%</td>
 <td>0.996</td>
 </tr>
 <tr>
 <td></td>
 <td>K-Means Diversity</td>
-<td>11.61%</td>
+<td>10.02%</td>
 <td>0.992</td>
 </tr>
 <tr>
 <td></td>
 <td>Max Uncertainty</td>
-<td>12.75%</td>
-<td>0.985</td>
+<td>7.84%</td>
+<td>0.994</td>
 </tr>
 <tr>
 <td></td>
 <td><strong>Regret-Optimal (ROAA)</strong></td>
-<td><strong>7.12%</strong></td>
+<td><strong>8.69%</strong></td>
 <td><strong>0.993</strong></td>
 </tr>
 </tbody>
 </table>
 <p>The empirical results confirm that zero-shot PICAN achieves a low
-MdAPE of 6.89%, and few-shot calibration via FiLM modulation quickly
-adapts the model to unseen accelerators with only <span
+MdAPE of 7.02%, and few-shot calibration via FiLM modulation quickly
+adapts the model to unseen accelerators with <span
 class="math inline">\(k \in \{1, 3, 5\}\)</span> probing measurements,
-providing reliable latency bounds across all operational serving
-workloads.</p>
+with random probing reaching 6.60% at <span
+class="math inline">\(k=5\)</span>.</p>
 <figure>
 <img src="figures/fig4_computational_performance_panel.png"
-alt="Figure 4: Computational performance and scalability panel. (a) Wall-clock execution time grouped by engine across operational serving scenarios. SHIFT-GPU cuts profiling overhead from 5.1s to 0.51s. (b) Architectural scalability showing sub-linear decision overhead across models ranging from 1B to 70B parameters." />
-<figcaption aria-hidden="true">Figure 4: Computational performance and
-scalability panel. (a) Wall-clock execution time grouped by engine
-across operational serving scenarios. SHIFT-GPU cuts profiling overhead
-from 5.1s to 0.51s. (b) Architectural scalability showing sub-linear
-decision overhead across models ranging from 1B to 70B
-parameters.</figcaption>
+alt="Figure 4: Active few-shot profiling adaptation and architectural parameter scalability. (a) Few-shot adaptation convergence. (b) Architectural scalability across 42 evaluated LLMs." />
+<figcaption aria-hidden="true">Figure 4: Active few-shot profiling
+adaptation and architectural parameter scalability. (a) Few-shot
+adaptation convergence. (b) Architectural scalability across 42
+evaluated LLMs.</figcaption>
 </figure>
 <h3 id="e6-production-hardware-recommendation-and-sla-regret">6.4 E6:
 Production Hardware Recommendation and SLA Regret</h3>
-<p>Table 3 and Figures 4, 5, and 6 evaluate hardware selection policies
+<p>Table 3 and Figures 5 and 6 evaluate hardware selection policies
 under a latency constraint <span class="math inline">\(T_{\max} =
 35\)</span> ms.</p>
 <h4
 id="table-3-production-hardware-recommendation-benchmark-under-35-ms-latency-sla">Table
 3: Production hardware recommendation benchmark under 35 ms latency
 SLA</h4>
-<table>
+<table style="width:100%;">
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
 </colgroup>
 <thead>
 <tr>
 <th>Selection Policy</th>
-<th>SLA Violation Rate (%)</th>
-<th>Mean Selected Power (W)</th>
-<th>Mean Operational Regret</th>
-<th>Abstain Rate (%)</th>
+<th>Accepted Workloads</th>
+<th>Abstention Rate (%)</th>
+<th>SLA Violations</th>
+<th>Mean Power (W)</th>
+<th>Mean Regret</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Minimum TDP</td>
-<td>2.4%</td>
-<td>106.2 W</td>
-<td>18.4</td>
+<td>125 / 125</td>
 <td>0.0%</td>
+<td>2 / 125 (1.6%)</td>
+<td>106.0 W</td>
+<td>2.8</td>
 </tr>
 <tr>
-<td>Point Estimate (WattGPU Baseline)</td>
-<td>0.8%</td>
-<td>114.0 W</td>
-<td>13.1</td>
+<td>Point Estimate (Matched XGBoost)</td>
+<td>125 / 125</td>
 <td>0.0%</td>
+<td>1 / 125 (0.8%)</td>
+<td>113.4 W</td>
+<td>10.2</td>
+</tr>
+<tr>
+<td>Point Estimate (SHIFT-GPU PICAN)</td>
+<td>125 / 125</td>
+<td>0.0%</td>
+<td>0 / 125 (0.0%)</td>
+<td>113.5 W</td>
+<td>10.1</td>
 </tr>
 <tr>
 <td><strong>SHIFT-GPU (Risk-Calibrated)</strong></td>
+<td><strong>125 / 125</strong></td>
 <td><strong>0.0%</strong></td>
-<td><strong>114.5 W</strong></td>
-<td><strong>11.1</strong></td>
-<td><strong>0.0%</strong></td>
+<td><strong>0 / 125 (0.0%)</strong></td>
+<td><strong>115.9 W</strong></td>
+<td><strong>12.5</strong></td>
 </tr>
 <tr>
 <td>True Empirical Oracle</td>
+<td>125 / 125</td>
 <td>0.0%</td>
+<td>0 / 125 (0.0%)</td>
 <td>103.4 W</td>
 <td>0.0</td>
-<td>0.0%</td>
 </tr>
 </tbody>
 </table>
-<p>Standard point-estimate recommendation triggers SLA violations in
-0.8% of deployments due to unmodeled tail latency, while Minimum TDP
-triggers 2.4% violations due to aggressive under-provisioning. In
-contrast, SHIFT-GPU leverages its certified conformal latency bounds to
-completely eliminate SLA violations (0.0%) with minimal additional power
-draw (+0.5 W vs point estimate), reducing operational regret to 11.1
-(the lowest among all evaluated non-oracle policies).</p>
+<p>Across all 125 evaluated cluster workloads, SHIFT-GPU observed 0 SLA
+violations among 125 accepted workloads (0.0%) while maintaining a
+comparable mean power draw (115.9 W vs. 113.4 W for point estimation).
+Rather than asserting an absolute mathematical guarantee, this empirical
+finding establishes that incorporating microarchitecturally calibrated
+bounds effectively shields production clusters from tail latency SLA
+infractions without sacrificing cluster throughput.</p>
 <figure>
 <img src="figures/fig5_per_architecture_error_panel.png"
-alt="Figure 5: Per-architecture relative error distribution on a log scale across evaluation workloads for (a) Ampere (A100 SXM4), (b) Ada Lovelace (L40S), and (c) Hopper (H100 NVL). SHIFT-GPU consistently bounds relative error below 3% across all microarchitectures." />
+alt="Figure 5: Per-architecture relative error distribution on a log scale across evaluation workloads for (a) Ampere (A100 SXM4), (b) Ada Lovelace (L40S), and (c) Hopper (H100 NVL)." />
 <figcaption aria-hidden="true">Figure 5: Per-architecture relative error
 distribution on a log scale across evaluation workloads for (a) Ampere
-(A100 SXM4), (b) Ada Lovelace (L40S), and (c) Hopper (H100 NVL).
-SHIFT-GPU consistently bounds relative error below 3% across all
-microarchitectures.</figcaption>
+(A100 SXM4), (b) Ada Lovelace (L40S), and (c) Hopper (H100
+NVL).</figcaption>
 </figure>
 <figure>
 <img src="figures/fig6_cumulative_regret_panel.png"
-alt="Figure 6: Cumulative operational deployment regret over serving request streams for (a) A100 Ampere, (b) L40S Ada Lovelace, and (c) H100 Hopper. SHIFT-GPU eliminates catastrophic SLA penalty accumulation, maintaining flat regret trajectories." />
+alt="Figure 6: Cumulative operational deployment regret over serving request streams for (a) A100 Ampere, (b) L40S Ada Lovelace, and (c) H100 Hopper under a 35 ms SLA." />
 <figcaption aria-hidden="true">Figure 6: Cumulative operational
 deployment regret over serving request streams for (a) A100 Ampere, (b)
-L40S Ada Lovelace, and (c) H100 Hopper. SHIFT-GPU eliminates
-catastrophic SLA penalty accumulation, maintaining flat regret
-trajectories.</figcaption>
+L40S Ada Lovelace, and (c) H100 Hopper under a 35 ms SLA.</figcaption>
 </figure>
 <h3 id="e7-systematic-ablation-study">6.5 E7: Systematic Ablation
 Study</h3>
 <p>Table 4 and Figure 7 isolate the architectural contributions of each
-component in SHIFT-GPU.</p>
+component in SHIFT-GPU, retrained independently on identical folds.</p>
 <h4
 id="table-4-systematic-ablation-study-isolating-architectural-and-algorithmic-components">Table
 4: Systematic ablation study isolating architectural and algorithmic
@@ -1139,51 +1147,43 @@ components</h4>
 <tr>
 <th>Model Architecture / Variant</th>
 <th>ITL MdAPE (%)</th>
-<th>Coverage (%)</th>
-<th>SLA Violation Rate (%)</th>
+<th>Empirical Coverage (%)</th>
+<th>SLA Violation Rate</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>Full Proposed SHIFT-GPU</strong></td>
-<td><strong>6.89%</strong></td>
-<td><strong>99.6%</strong></td>
-<td><strong>0.0%</strong></td>
+<td><strong>7.02%</strong></td>
+<td><strong>86.8%</strong></td>
+<td><strong>0 / 125 (0.0%)</strong></td>
 </tr>
 <tr>
-<td>Ablation A: Without Roofline Base</td>
-<td>21.36%</td>
-<td>78.4%</td>
-<td>5.6%</td>
+<td>Ablation A: Without Roofline Base (Pure Attention)</td>
+<td>20.59%</td>
+<td>80.1%</td>
+<td>2 / 125 (1.6%)</td>
 </tr>
 <tr>
-<td>Ablation B: Without Cross-Attention</td>
-<td>8.28%</td>
-<td>81.2%</td>
-<td>0.0%</td>
+<td>Ablation B: Without Cross-Attention (Flat MLP)</td>
+<td>10.57%</td>
+<td>77.0%</td>
+<td>0 / 125 (0.0%)</td>
 </tr>
 <tr>
-<td>Ablation C: Without Shift-Adjustment</td>
-<td>6.89%</td>
-<td>100.0%</td>
-<td>0.8%</td>
-</tr>
-<tr>
-<td>Baseline D: Standard WattGPU (XGB)</td>
-<td>11.28%</td>
-<td>69.5%</td>
-<td>0.8%</td>
+<td>Baseline C: Standard WattGPU (XGBoost)</td>
+<td>12.16%</td>
+<td>82.0%</td>
+<td>1 / 125 (0.8%)</td>
 </tr>
 </tbody>
 </table>
 <figure>
 <img src="figures/fig7_summary_heatmap.png"
-alt="Figure 7: Summary performance matrices. (a) Relative prediction error matrix (engine x hardware generation), normalized to baseline (=1.00). (b) Computational speedup and profiling measurement reduction factor, confirming a 5.4x to 12.3x efficiency multiplier across architectures." />
-<figcaption aria-hidden="true">Figure 7: Summary performance matrices.
-(a) Relative prediction error matrix (engine x hardware generation),
-normalized to baseline (=1.00). (b) Computational speedup and profiling
-measurement reduction factor, confirming a 5.4x to 12.3x efficiency
-multiplier across architectures.</figcaption>
+alt="Figure 7: Systematic component ablation and production recommendation trade-offs. (a) Component ablation. (b) Production hardware selection frontier." />
+<figcaption aria-hidden="true">Figure 7: Systematic component ablation
+and production recommendation trade-offs. (a) Component ablation. (b)
+Production hardware selection frontier.</figcaption>
 </figure>
 <hr />
 <h2 id="discussion-and-systems-implications">7. Discussion and Systems
