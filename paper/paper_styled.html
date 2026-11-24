@@ -385,14 +385,14 @@ pandiajason@gmail.com</em></p>
 <ul>
 <li>Reduces unseen GPU latency prediction error from 12.16% to 7.02%
 over tree models.</li>
-<li>PICAN couples roofline physics with cross-attention to bound
-prediction error.</li>
+<li>PICAN couples roofline physics with cross-attention to constrain
+latency error.</li>
 <li>Modern accelerators (L4, A30, H200, L40S) achieve 4.3%–6.7%
 zero-shot latency MdAPE.</li>
 <li>Zero-leakage protocol verified via bit-for-bit NaN-blinded target
 testing.</li>
-<li>Conformal bounds eliminate violations under tight SLAs with minimal
-power buffer.</li>
+<li>Calibrated policy avoids violations under tight SLAs in offline
+replay.</li>
 </ul>
 <hr />
 <h2 id="abstract">Abstract</h2>
@@ -533,19 +533,20 @@ cutting profiling overhead by over 95%.</li>
 Energy-Aware Resource Management in Sustainable Computing</h3>
 <p>Optimizing energy efficiency and carbon emissions in machine learning
 systems has emerged as a primary focus in sustainable computing
-literature. In this journal, Zhang et al. [5] proposed data-driven
+literature. In this journal, Castaño et al. [5] proposed data-driven
 multi-objective optimization frameworks to balance energy, performance,
 and financial cost during ML inference configuration selection. However,
 their work primarily explored in-domain configuration spaces on fixed
 hardware accelerators and did not address out-of-distribution transfer
-to unseen hardware families. In parallel, Kumar et al. [6] designed a
-forecasting-based perception layer for energy-aware resource management
-in LLM serving on high-performance computing clusters, highlighting the
-critical role of predictive models in proactive cluster scheduling.
-Complementing these empirical systems, Al-Masri et al. [7] investigated
-power-latency trade-offs through an analytical queueing model
-perspective, establishing that operational response times are
-inextricably coupled to hardware power capping envelopes.</p>
+to unseen hardware families. In parallel, Aguirre-Usandizaga et al. [6]
+designed a forecasting-based perception layer for energy-aware resource
+management in LLM serving on high-performance computing clusters,
+highlighting the critical role of predictive models in proactive cluster
+scheduling. Complementing these empirical serving systems, Yao et
+al. [7] investigated queueing and power trade-offs in deep-learning
+training systems from an analytical perspective, establishing that
+operational response times and queueing dynamics are tightly coupled to
+hardware power capping envelopes.</p>
 <p>SHIFT-GPU directly builds upon and advances this body of work by
 providing the missing bridge: <em>How can an energy-aware perception
 layer accurately forecast performance and power on newly introduced
@@ -561,26 +562,34 @@ maximize hardware saturation. Despite these software advances, the
 underlying hardware efficiency is dictated by the classical Roofline
 model [9], which defines the operational boundaries between
 compute-limited and bandwidth-limited execution.</p>
-<p>WattGPU [4] pioneered the use of machine learning models to predict
-mean power draw and inter-token latency across unseen GPUs. However,
-WattGPU relies on standard gradient-boosted decision trees (XGBoost),
-which treat hardware specs as unconstrained tabular inputs, fail to
-extrapolate beyond the training bounding box, and provide no calibrated
-uncertainty bounds for risk-aware scheduling.</p>
+<p>WattGPU [4] demonstrated that tree ensembles (XGBoost) trained on
+public LLM parameters and static GPU specifications can predict
+inference power and latency across unseen GPUs. In our matched rerun
+under Leave-One-GPU-Out (LOGO) cross-validation, XGBoost achieves 12.16%
+median absolute percentage error for inter-token latency. Because
+standard tree models lack microarchitectural inductive biases and
+calibrated uncertainty intervals, their point estimates risk triggering
+uncalibrated SLA violations during deployment.</p>
 <h3 id="conformal-prediction-and-covariate-shift">2.3 Conformal
 Prediction and Covariate Shift</h3>
 <p>Conformal prediction provides a distribution-free framework for
-constructing valid predictive intervals with finite-sample coverage
-guarantees [10]. Standard inductive conformal prediction assumes
-exchangeability of calibration and test data (<span
-class="math inline">\(P_{\text{train}} = P_{\text{test}}\)</span>).
-However, when evaluating an unseen accelerator architecture, this
-assumption is fundamentally violated due to hardware covariate shift.
-Tibshirani et al. [11] established the theoretical foundations of
-weighted conformal prediction under covariate shift using likelihood
-ratio re-weighting. In SHIFT-GPU, we adapt these principles to the
-discrete topology of microarchitectural accelerator specifications using
-Mahalanobis discrepancy calibration.</p>
+constructing valid predictive intervals with finite-sample marginal
+coverage guarantees under exchangeability [10]. Standard split conformal
+prediction assumes that calibration and test data are drawn exchangeably
+from the same distribution (<span class="math inline">\(P_{\text{cal}} =
+P_{\text{test}}\)</span>). When evaluating an unseen accelerator
+architecture, exchangeability cannot be assumed because the test GPU
+represents a distinct hardware population. Tibshirani et al. [11]
+established the theoretical foundations of weighted conformal prediction
+under covariate shift using likelihood-ratio density re-weighting.
+However, likelihood-ratio density estimation cannot be reliably
+evaluated across sparse, discrete microarchitectural feature spaces. In
+SHIFT-GPU, we employ an empirical Mahalanobis distance heuristic to
+scale interval widths under hardware discrepancy. Because
+exchangeability does not hold across distinct GPU populations and the
+Mahalanobis adjustment is an empirical heuristic rather than a formal
+theoretical guarantee, we treat our calibrated bounds as empirical and
+report observed coverage on held-out hardware.</p>
 <h3 id="active-learning-and-few-shot-model-adaptation">2.4 Active
 Learning and Few-Shot Model Adaptation</h3>
 <p>Active learning aims to maximize predictive accuracy while minimizing
@@ -1695,33 +1704,36 @@ Proceedings of the 29th ACM Symposium on Operating Systems Principles
 <li>Fadel Argerich, M., Fürst, J., Patiño-Martínez, M., 2026. WattGPU:
 Predicting inference power and latency on unseen GPUs and LLMs. In:
 Proceedings of the 1st Workshop on Sustainability and
-Resource-Efficiency of Artificial Intelligence @ IJCAI 2026,
-CEUR-WS.org.</li>
-<li>Zhang, H., Liu, Y., Wang, X., 2026. Data-driven multi-objective
-optimization of ML inference hardware configurations for energy,
-performance and cost. Sustainable Computing: Informatics and Systems 45,
-101347. https://doi.org/10.1016/j.suscom.2026.101347.</li>
-<li>Kumar, R., Rossi, F., Patel, M., 2026. A forecasting-based
-perception layer for energy-aware resource management in LLM serving
-deployed on high-performance computing clusters. Sustainable Computing:
-Informatics and Systems 44, 101333.
+Resource-Efficiency of Artificial Intelligence @ IJCAI 2026, CEUR
+Workshop Proceedings, vol. 4275, CEUR-WS.org.</li>
+<li>Castaño, J., Bustillo, J., Franch, X., Martínez-Fernández, S., 2026.
+Data-driven multi-objective optimization of ML inference hardware
+configurations for energy, performance and cost. Sustainable Computing:
+Informatics and Systems 50, 101347.
+https://doi.org/10.1016/j.suscom.2026.101347.</li>
+<li>Aguirre-Usandizaga, J., Torre-Bastida, A. I., Linares de la Puerta,
+M., Almeida, A., 2026. A forecasting-based perception layer for
+energy-aware resource management in LLM serving deployed on
+high-performance computing clusters. Sustainable Computing: Informatics
+and Systems 50, 101333.
 https://doi.org/10.1016/j.suscom.2026.101333.</li>
-<li>Al-Masri, E., Chen, Z., Gupta, S., 2025. Trade-offs between power
+<li>Yao, Y., Zhu, B., Xiao, Y., Liu, H., 2025. Trade-offs between power
 consumption and response time in deep learning systems: A queueing model
-perspective. Sustainable Computing: Informatics and Systems 42, 101220.
+perspective. Sustainable Computing: Informatics and Systems 48, 101220.
 https://doi.org/10.1016/j.suscom.2025.101220.</li>
-<li>Dao, T., Fu, D. Y., Ermon, S., Rudra, A., Ré, C., 2022.
-FlashAttention: Fast and memory-efficient exact attention with
-IO-awareness. In: Advances in Neural Information Processing Systems
-(NeurIPS), vol. 35, pp. 16344–16359.</li>
+<li>Aminabadi, R. Y., Rajbhandari, S., Zhang, M., Awan, A. A., Li, C.,
+Li, D., Zheng, E., Rasley, J., Smith, S., Ruwase, O., He, Y., 2022.
+DeepSpeed-Inference: Extreme-scale model inference for web-scale
+services. In: Proceedings of the International Conference for High
+Performance Computing, Networking, Storage and Analysis (SC), pp. 1–15.
+https://doi.org/10.1109/SC41404.2022.00076.</li>
 <li>Williams, S., Waterman, A., Patterson, D., 2009. Roofline: An
 insightful visual performance model for multicore architectures.
 Communications of the ACM 52 (4), 65–76.
 https://doi.org/10.1145/1498765.1498785.</li>
-<li>Angelopoulos, A. N., Bates, S., 2023. A gentle introduction to
-conformal prediction and distribution-free uncertainty quantification.
-Foundations and Trends in Machine Learning 16 (4), 494–591.
-https://doi.org/10.1561/2200000101.</li>
+<li>Angelopoulos, A. N., Bates, S., 2023. Conformal Prediction: A Gentle
+Introduction. Foundations and Trends in Machine Learning 16 (4),
+494–591. https://doi.org/10.1561/2200000101.</li>
 <li>Tibshirani, R. J., Barber, R. F., Candès, E., Ramdas, A., 2019.
 Conformal prediction under covariate shift. In: Advances in Neural
 Information Processing Systems (NeurIPS), vol. 32.</li>
@@ -1731,6 +1743,10 @@ Proceedings of the AAAI Conference on Artificial Intelligence, vol. 32
 (1).</li>
 <li>Settles, B., 2009. Active learning literature survey. Computer
 Sciences Technical Report 1648, University of Wisconsin–Madison.</li>
+<li>Fadel Argerich, M., Fürst, J., Patiño-Martínez, M., 2026. Watt
+Counts: A detailed telemetry dataset for energy and latency in LLM
+inference. arXiv preprint arXiv:2604.09048.
+https://doi.org/10.48550/arXiv.2604.09048.</li>
 </ol>
 </body>
 </html>
