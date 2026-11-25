@@ -111,7 +111,7 @@ If you build upon or reference SHIFT-GPU in your research, please cite:
 ```bibtex
 @article{shift_gpu2026,
   title     = {SHIFT-GPU: Shift-Aware, Risk-Calibrated and Physics-Guided Learning for Reliable LLM Inference Hardware Selection},
-  author    = {Anonymous Authors},
+  author    = {Jason Pandian},
   journal   = {Sustainable Computing: Informatics and Systems},
   year      = {2026},
   note      = {Under Review}
