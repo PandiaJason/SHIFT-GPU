@@ -385,8 +385,8 @@ pandiajason@gmail.com</em></p>
 <ul>
 <li>Reduces unseen GPU latency prediction error from 12.16% to 7.02%
 over tree models.</li>
-<li>PICAN couples roofline physics with cross-attention to constrain
-latency error.</li>
+<li>PICAN couples roofline physics with structured bipartite encoding to
+constrain latency error.</li>
 <li>Modern accelerators (L4, A30, H200, L40S) achieve 4.3%–6.7%
 zero-shot latency MdAPE.</li>
 <li>Zero-leakage protocol verified: predictions match within numerical
@@ -406,32 +406,34 @@ severe performance degradation when evaluating unseen GPU architectures,
 causing Service Level Agreement (SLA) violations and excessive energy
 consumption. To resolve this, we present <strong>SHIFT-GPU</strong>, a
 framework uniting physics-guided learning, covariate-shift calibration,
-and decision-theoretic active adaptation. At its core is
+and parameter-efficient few-shot adaptation. At its core is
 <strong>PICAN</strong> (<em>Physics-Informed Cross-Attention
 Network</em>), which couples a deterministic microarchitectural Roofline
-latency bound with bipartite cross-attention (<span
-class="math inline">\(Q = W_q w_x, K = W_k h_g, V = W_v h_g\)</span>)
-and multiplicative exponential residuals (<span
+latency bound with a structured bipartite latent interaction module
+(<span class="math inline">\(w_x \in \mathbb{R}^d, h_g \in
+\mathbb{R}^d\)</span>) and multiplicative exponential residuals (<span
 class="math inline">\(\hat{T} = T_{\text{roof}} \cdot
 \exp(\text{softplus}(r_\theta))\)</span>). To address microarchitectural
 domain shift, SHIFT-GPU incorporates group-conditional conformal
 prediction adjusted for Mahalanobis hardware discrepancy. Furthermore,
-<strong>Regret-Optimal Active Acquisition (ROAA)</strong> selects a
-minimal calibration budget (<span class="math inline">\(k \in \{1, 3,
-5\}\)</span>) to directly inform hardware recommendations near the SLA
-feasibility boundary. Evaluated under strict Leave-One-GPU-Out
-cross-validation across 4,163 real-world production configurations
-spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU
-architectures, SHIFT-GPU reduces unseen-hardware latency prediction
-error from 12.16% to 7.02% MdAPE (a 42.3% relative error reduction over
-matched XGBoost), with modern accelerators achieving 4.3%–6.7% error.
-Under production cluster selection with a 35 ms SLA, SHIFT-GPU observed
-0 violations out of 125 accepted workloads (0.0%) compared to 1 / 125
-for XGBoost and 2 / 125 for Minimum TDP; under tighter latency
-constraints (<span class="math inline">\(T_{\max} \le 30\)</span> ms)
-where uncalibrated point prediction incurs up to 6.4% violations,
-conformal calibration eliminates violations entirely in exchange for a
-modest power buffer (+1.4 W to +4.0 W).</p>
+we evaluate few-shot calibration (<span class="math inline">\(k \in \{1,
+3, 5\}\)</span>) via FiLM parameter modulation, where uniform random
+probing achieves 6.60% MdAPE at <span
+class="math inline">\(k=5\)</span>. Evaluated under strict
+Leave-One-GPU-Out cross-validation across 4,163 real-world production
+configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA
+GPU architectures, SHIFT-GPU’s foremost contribution is reducing
+unseen-hardware latency prediction error from 12.16% to 7.02% MdAPE (a
+42.3% relative error reduction over matched XGBoost), with modern
+accelerators achieving 4.3%–6.7% error. Under production cluster
+selection with a 35 ms SLA, SHIFT-GPU observed 0 violations out of 125
+accepted workloads (0.0%) compared to 1 / 125 for XGBoost and 2 / 125
+for Minimum TDP; under a tighter latency constraint (<span
+class="math inline">\(T_{\max} = 20\)</span> ms) where uncalibrated
+point prediction incurs 8 violations among 125 accepted workloads
+(6.4%), conformal calibration records zero violations among 123 accepted
+workloads (abstaining on 2 workloads deemed infeasible) in exchange for
+a modest power buffer (+1.36 W on average).</p>
 <p><strong>Keywords:</strong> Large Language Models, GPU Infrastructure,
 Physics-Informed Neural Networks, Conformal Prediction, Active Learning,
 Sustainable Computing.</p>
@@ -499,24 +501,35 @@ exponential residuals (<span class="math inline">\(\hat{T} =
 T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))\)</span>), PICAN
 enforces physical consistency across orders of magnitude of
 latency.</li>
-<li><strong>Microarchitectural Bipartite Cross-Attention:</strong>
+<li><strong>Microarchitectural Bipartite Latent Coupling:</strong>
 Rather than concatenating tabular vectors into flat multi-layer
 perceptrons, PICAN projects workload parameters and hardware
-specifications into distinct latent sub-manifolds, using cross-attention
-(<span class="math inline">\(Q = W_q w_x, K = W_k h_g, V = W_v
-h_g\)</span>) to dynamically model how memory access patterns intersect
-with accelerator memory controllers and execution pipelines.</li>
+specifications into distinct latent spaces, using a bipartite
+interaction architecture (<span class="math inline">\(Q = W_q w_x, K =
+W_k h_g, V = W_v h_g\)</span>) with residual connections to fuse
+workload features and accelerator capabilities. In our ablations, this
+structured bipartite representation reduces error from 10.57% (flat
+concatenated MLP) to 7.02% (a 33.6% relative reduction). We explicitly
+qualify that in pairwise evaluation (single workload and single hardware
+token), the softmax attention weight is mathematically degenerate (<span
+class="math inline">\(\mathrm{softmax}=1.0\)</span>), so the empirical
+performance gain reflects the inductive bias of decoupled dual-encoder
+representation and residual normalization rather than dynamic
+cross-token attention filtering.</li>
 <li><strong>Covariate-Shift Conformal Risk Calibration:</strong> We
 formalize group-conditional conformal prediction adjusted for
 microarchitectural Mahalanobis distance in hardware specification space,
 bounding tail latency risk under hardware distribution shift without
 heuristic hand-tuning.</li>
-<li><strong>Regret-Optimal Active Acquisition (ROAA):</strong> We
-formulate a decision-theoretic active learning policy for few-shot
-hardware calibration. Unlike standard active learning methods that
-passively target maximum statistical variance, ROAA prioritizes probing
-configurations located in the critical ambiguity region near the SLA
-boundary, directly informing operational hardware selection.</li>
+<li><strong>Evaluation of Few-Shot Calibration Strategies:</strong> We
+investigate targeted few-shot hardware calibration (<span
+class="math inline">\(k \in \{1, 3, 5\}\)</span>) via FiLM parameter
+modulation without retraining backbone weights. We benchmark a
+boundary-focused acquisition heuristic alongside diversity and
+uncertainty baselines, observing that uniform random sampling achieves
+the lowest overall error (6.60% at <span
+class="math inline">\(k=5\)</span>) while boundary acquisition focuses
+specifically on decision thresholds.</li>
 <li><strong>Comprehensive Zero-Leakage Empirical Validation:</strong> We
 conduct an exhaustive evaluation across 4,163 benchmark configurations
 spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures
@@ -713,8 +726,18 @@ class="math inline">\(h_g \in \mathbb{R}^d\)</span>. 3.
 <span class="math display">\[Q = W_q w_x, \quad K = W_k h_g, \quad V =
 W_v h_g\]</span> <span class="math display">\[z_{\text{mca}} =
 \text{Softmax}\left(\frac{Q K^T}{\sqrt{d}}\right) V, \quad z =
-\text{LayerNorm}(w_x + z_{\text{mca}})\]</span> 4.
-<strong>Multiplicative Physics-Residual Head:</strong> <span
+\text{LayerNorm}(w_x + z_{\text{mca}})\]</span> <em>Mathematical
+Qualification on Pairwise Attention Dynamics:</em> In pairwise
+evaluation with a single workload and hardware vector (<span
+class="math inline">\(L_q = 1, L_k = 1\)</span>), the softmax evaluates
+identically to 1.0, rendering <span class="math inline">\(z_{\text{mca}}
+= W_v h_g\)</span>. The 33.6% error reduction over a flat MLP (7.02%
+vs. 10.57%) is driven by the decoupled dual-encoder representation,
+residual skip connection, and layer normalization, rather than dynamic
+cross-token attention weighting. Extending to list-wise multi-GPU
+sequence encoding (<span class="math inline">\(L_k &gt; 1\)</span>)
+represents a natural path to realize true data-dependent attention
+routing. 4. <strong>Multiplicative Physics-Residual Head:</strong> <span
 class="math display">\[\hat{T}(x, g) = T_{\text{roof}}(x, g) \cdot
 \exp\left(\text{softplus}(r_\theta(z))\right)\]</span> <span
 class="math display">\[\hat{P}(x, g) = TDP(g) \cdot
@@ -1614,6 +1637,34 @@ certified SLA compliance with negligible overhead.</p>
 <hr />
 <h2 id="threats-to-validity-and-limitations">8. Threats to Validity and
 Limitations</h2>
+<p><strong>Workload-hardware attention dynamics:</strong> In our
+pairwise training and inference formulation, each input sample comprises
+a single workload specification <span class="math inline">\(x\)</span>
+and a single candidate accelerator <span
+class="math inline">\(g\)</span>. Because the key sequence length is
+unity (<span class="math inline">\(L_k = 1\)</span>), the softmax
+attention distribution is trivially concentrated on the single available
+hardware token (<span class="math inline">\(\mathrm{softmax}(s) =
+1.0\)</span>), rendering the query-key dot products non-operational for
+single-pair inference. The 33.6% relative error reduction observed in
+Ablation B (7.02% for PICAN vs. 10.57% for a flat concatenated MLP) is
+therefore attributable to the decoupled dual-encoder inductive bias,
+residual skip connections, and layer-normalized feature fusion, rather
+than workload-dependent attention weighting over diverse hardware
+tokens. Extending PICAN to joint multi-GPU list-wise encoding—where a
+workload query attends simultaneously over a sequence of <span
+class="math inline">\(N\)</span> candidate accelerators—represents a
+promising direction to realize true data-dependent attention
+routing.</p>
+<p><strong>Few-shot active acquisition:</strong> While we formulated a
+boundary-targeted acquisition heuristic (ROAA) to explore threshold
+configurations, empirical results showed that uniform random sampling
+achieved lower global regression error across all tested budgets (<span
+class="math inline">\(k \in \{1, 3, 5\}\)</span>). Biasing few-shot
+measurements toward decision thresholds does not improve global latency
+estimation across the broader workload space. Identifying acquisition
+functions that simultaneously minimize boundary classification risk and
+global regression error remains an open problem.</p>
 <p><strong>Calibration under hardware shift:</strong> Split conformal
 prediction provides finite-sample marginal coverage of at least <span
 class="math inline">\(1-\alpha\)</span> under exchangeability of the
