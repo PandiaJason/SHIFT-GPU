@@ -228,15 +228,15 @@ Table 2 and Figure 4 evaluate few-shot adaptation performance as a function of p
 | $k = 1$ (One-Shot) | Uniform Random | 7.59% | 0.995 |
 | | K-Means Diversity | 9.16% | 0.993 |
 | | Max Uncertainty | 7.68% | 0.994 |
-| | **Regret-Optimal (ROAA)** | **8.57%** | **0.994** |
+| | Boundary Heuristic (ROAA) | 8.57% | 0.994 |
 | $k = 3$ (Three-Shot) | Uniform Random | 7.20% | 0.995 |
 | | K-Means Diversity | 8.20% | 0.994 |
 | | Max Uncertainty | 7.95% | 0.994 |
-| | **Regret-Optimal (ROAA)** | **8.63%** | **0.993** |
-| $k = 5$ (Five-Shot) | Uniform Random | 6.60% | 0.996 |
-| | K-Means Diversity | 10.02% | 0.992 |
+| | Boundary Heuristic (ROAA) | 8.63% | 0.993 |
+| $k = 5$ (Five-Shot) | **Uniform Random** | **6.60%** | **0.996** |
+| | K-Means Diversity | 9.69% | 0.992 |
 | | Max Uncertainty | 7.84% | 0.994 |
-| | **Regret-Optimal (ROAA)** | **8.69%** | **0.993** |
+| | Boundary Heuristic (ROAA) | 8.69% | 0.993 |
 
 The empirical results confirm that zero-shot PICAN achieves a low MdAPE of 7.02%, and few-shot calibration via FiLM modulation quickly adapts the model to unseen accelerators with $k \in \{1, 3, 5\}$ probing measurements, with random probing reaching 6.60% at $k=5$.
 

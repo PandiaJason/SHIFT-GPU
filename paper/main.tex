@@ -54,7 +54,7 @@
             country={India}}
 
 \begin{abstract}
-Selecting optimal hardware accelerators for Large Language Model (LLM) serving in heterogeneous cloud clusters is a critical operational problem in sustainable computing. In production data centers, exhaustive empirical profiling across models, batch sizes, and GPU generations is environmentally and financially prohibitive. While metadata-driven predictors estimate power draw and latency, existing models suffer severe performance degradation when evaluating unseen GPU architectures, causing Service Level Agreement (SLA) violations and excessive energy consumption. To resolve this, we present \textbf{SHIFT-GPU}, a framework uniting physics-guided learning, covariate-shift calibration, and decision-theoretic active adaptation. At its core is \textbf{PICAN} (\textit{Physics-Informed Cross-Attention Network}), which couples a deterministic microarchitectural Roofline latency bound with bipartite cross-attention ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) and multiplicative exponential residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))$). To address microarchitectural domain shift, SHIFT-GPU incorporates group-conditional conformal prediction adjusted for Mahalanobis hardware discrepancy. Furthermore, \textbf{Regret-Optimal Active Acquisition (ROAA)} selects a minimal calibration budget ($k \in \{1, 3, 5\}$) to directly inform hardware recommendations near the SLA feasibility boundary. Evaluated under strict Leave-One-GPU-Out cross-validation across 4,163 real-world production configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures, SHIFT-GPU reduces unseen-hardware latency prediction error from 12.16\% to 7.02\% MdAPE (a 42.3\% relative error reduction over matched XGBoost), with modern accelerators achieving 4.3\%--6.7\% error. Under production cluster selection with a 35~ms SLA, SHIFT-GPU observed 0 violations out of 125 accepted workloads (0.0\%) compared to 1 / 125 for XGBoost and 2 / 125 for Minimum TDP; under tighter latency constraints ($T_{\max} \le 30$~ms) where uncalibrated point prediction incurs up to 6.4\% violations, conformal calibration eliminates violations entirely in exchange for a modest power buffer (+1.4~W to +4.0~W).
+Selecting optimal hardware accelerators for Large Language Model (LLM) serving in heterogeneous cloud clusters is a critical operational problem in sustainable computing. In production data centers, exhaustive empirical profiling across models, batch sizes, and GPU generations is environmentally and financially prohibitive. While metadata-driven predictors estimate power draw and latency, existing models suffer severe performance degradation when evaluating unseen GPU architectures, causing Service Level Agreement (SLA) violations and excessive energy consumption. To resolve this, we present \textbf{SHIFT-GPU}, a framework uniting physics-guided learning, covariate-shift calibration, and parameter-efficient few-shot adaptation. At its core is \textbf{PICAN} (\textit{Physics-Informed Cross-Attention Network}), which couples a deterministic microarchitectural Roofline latency bound with bipartite cross-attention ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) and multiplicative exponential residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))$). To address microarchitectural domain shift, SHIFT-GPU incorporates group-conditional conformal prediction adjusted for Mahalanobis hardware discrepancy. Furthermore, we evaluate few-shot calibration ($k \in \{1, 3, 5\}$) via FiLM parameter modulation, where uniform random probing achieves 6.60\% MdAPE at $k=5$. Evaluated under strict Leave-One-GPU-Out cross-validation across 4,163 real-world production configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures, SHIFT-GPU's foremost contribution is reducing unseen-hardware latency prediction error from 12.16\% to 7.02\% MdAPE (a 42.3\% relative error reduction over matched XGBoost), with modern accelerators achieving 4.3\%--6.7\% error. Under production cluster selection with a 35~ms SLA, SHIFT-GPU observed 0 violations out of 125 accepted workloads (0.0\%) compared to 1 / 125 for XGBoost and 2 / 125 for Minimum TDP; under a tighter latency constraint ($T_{\max} = 20$~ms) where uncalibrated point prediction incurs 8 violations among 125 accepted workloads (6.4\%), conformal calibration records zero violations among 123 accepted workloads (abstaining on 2 workloads deemed infeasible) in exchange for a modest power buffer (+1.36~W on average).
 \end{abstract}
 
 %% Research highlights
@@ -94,9 +94,9 @@ To resolve this fundamental gap, this paper presents \textbf{SHIFT-GPU}, an end-
 
 \begin{enumerate}
     \item \textbf{PICAN Architecture (Physics-Informed Cross-Attention Network):} We design a novel neural network architecture that integrates a deterministic microarchitectural Roofline latency lower bound ($T_{\text{roof}} = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}}\right)$) into the hypothesis space. By decoupling the deterministic physical memory-bandwidth streaming floor from the learned representation via multiplicative exponential residuals, PICAN enforces physical consistency across orders of magnitude of latency.
-    \item \textbf{Microarchitectural Bipartite Cross-Attention:} Rather than concatenating tabular vectors into flat multi-layer perceptrons, PICAN projects workload parameters and hardware specifications into distinct latent sub-manifolds, using cross-attention ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) to dynamically model how memory access patterns intersect with accelerator memory controllers and execution pipelines.
+    \item \textbf{Microarchitectural Bipartite Latent Coupling:} Rather than concatenating tabular vectors into flat multi-layer perceptrons, PICAN projects workload parameters and hardware specifications into distinct latent spaces, using bipartite cross-attention ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) with residual connections to fuse workload features and accelerator capabilities. In our ablations, this structured bipartite representation reduces error to 7.02\% compared with 10.57\% for a flat concatenated MLP.
     \item \textbf{Covariate-Shift Conformal Risk Calibration:} We formalize group-conditional conformal prediction adjusted for microarchitectural Mahalanobis distance in hardware specification space, bounding tail latency risk under hardware distribution shift without heuristic hand-tuning.
-    \item \textbf{Regret-Optimal Active Acquisition (ROAA):} We formulate a decision-theoretic active learning policy for few-shot hardware calibration. Unlike standard active learning methods that passively target maximum statistical variance, ROAA prioritizes probing configurations located in the critical ambiguity region near the SLA boundary, directly informing operational hardware selection.
+    \item \textbf{Evaluation of Few-Shot Calibration Strategies:} We investigate targeted few-shot hardware calibration ($k \in \{1, 3, 5\}$) via FiLM parameter modulation without retraining backbone weights. We benchmark a boundary-focused acquisition heuristic alongside diversity and uncertainty baselines, observing that uniform random sampling achieves the lowest overall error (6.60\% at $k=5$) while boundary acquisition focuses specifically on decision thresholds.
     \item \textbf{Comprehensive Zero-Leakage Empirical Validation:} We conduct an exhaustive evaluation across 4,163 benchmark configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures under an automated NaN-blinded zero-leakage protocol where predictions matched within numerical tolerance. Results demonstrate that SHIFT-GPU's foremost strength is superior zero-shot latency prediction: reducing unseen-hardware error from 12.16\% to 7.02\% MdAPE (a 42.3\% relative error reduction over matched XGBoost), while eliminating SLA violations (0 out of 125 accepted workloads) and cutting profiling overhead by over 95\%.
 \end{enumerate}
 
@@ -480,24 +480,24 @@ where $\mathbb{I}(\cdot)$ is the indicator function and $\lambda_{\text{SLA}} \g
 };
 \draw[arrow=cpurple] (conf) -- (sel);
 
-% ROAA Probing Loop Card
+% Few-Shot Probing Loop Card
 \node[card=camber, fill=camberbg, anchor=north] (roaa) at (21.725, 2.1) {
     \parbox{5.1cm}{
         \centering
-        \textcolor{camber}{\textbf{\scriptsize Regret-Optimal Active Acquisition}}\\[0.15em]
-        \tiny Active probe selection on candidate $x$ near SLA boundary:
+        \textcolor{camber}{\textbf{\scriptsize Active Few-Shot Boundary Probing}}\\[0.15em]
+        \tiny Boundary probe heuristic on candidate $x$ near SLA threshold:
         $$\textstyle \alpha_{\text{ROAA}}(x) \propto \hat{\sigma} \exp\left(-\frac{(\hat{T}-T_{\max})^2}{2\hat{\sigma}^2}\right) \frac{\hat{P}}{\mathrm{TDP}}$$
     }
 };
 
-% ROAA Feedback arrow to FiLM modulation (clean path along bottom channel and up left margin of Stage 2)
+% Few-Shot Feedback arrow to FiLM modulation (clean path along bottom channel and up left margin of Stage 2)
 \draw[dasharrow=camber] (roaa.west) -- ++(-0.25, 0) |- (15.425, 0.25) -- (6.35, 0.25) |- (film.west);
 \node[fill=camberbg, draw=camber, rounded corners=2pt, font=\bfseries\tiny, text=camber!90!black, inner sep=2pt] 
-    at (15.425, 0.25) {ROAA Few-Shot Probing Feedback: Updates FiLM $[\gamma_k, \beta_k]$};
+    at (15.425, 0.25) {Few-Shot Probing Feedback: Updates FiLM $[\gamma_k, \beta_k]$};
 
 \end{tikzpicture}%
 }
-\caption{Neural network topology and decision pipeline of the SHIFT-GPU framework. Left to right: (1) Workload ($E_W$) and hardware ($E_H$) encoders mapping continuous geometry and categorical specifications to latent spaces $w_x, h_g \in \mathbb{R}^d$ under zero-leakage blinding; (2) Microarchitectural Cross-Attention (MCA) core computing query-key affinities ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$), residual layer normalization, FFN, and FiLM latent modulation ($z_{\text{adapted}} = \gamma_k \odot z + \beta_k$); (3) Dual-path physics recombination coupling a deterministic Roofline lower bound ($T_{\text{roof}}$) with neural residual heads via multiplicative physics floor ($\hat{T} \ge T_{\text{roof}}$) and thermal envelope ($\hat{P} \le TDP$); and (4) Conformal calibration and admission controller evaluating Mahalanobis covariate shift $d_{\text{shift}}(g)$, scaling non-conformity quantiles $\hat{q}_{\text{shift}}$, enforcing SLA feasibility $\mathcal{G}_{\text{feas}}$, selecting power-minimizing accelerators $g^*$, and acquiring boundary probes via ROAA.}
+\caption{Neural network topology and decision pipeline of the SHIFT-GPU framework. Left to right: (1) Workload ($E_W$) and hardware ($E_H$) encoders mapping continuous geometry and categorical specifications to latent spaces $w_x, h_g \in \mathbb{R}^d$ under zero-leakage blinding; (2) Microarchitectural Cross-Attention (MCA) core computing query-key affinities ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$), residual layer normalization, FFN, and FiLM latent modulation ($z_{\text{adapted}} = \gamma_k \odot z + \beta_k$); (3) Dual-path physics recombination coupling a deterministic Roofline lower bound ($T_{\text{roof}}$) with neural residual heads via multiplicative physics floor ($\hat{T} \ge T_{\text{roof}}$) and thermal envelope ($\hat{P} \le TDP$); and (4) Conformal calibration and admission controller evaluating Mahalanobis covariate shift $d_{\text{shift}}(g)$, scaling non-conformity quantiles $\hat{q}_{\text{shift}}$, enforcing SLA feasibility $\mathcal{G}_{\text{feas}}$, selecting power-minimizing accelerators $g^*$, and adapting representations via few-shot boundary probes.}
 \label{fig:architecture}
 \end{figure*}
 
@@ -526,7 +526,7 @@ To learn the complex non-linear residual dynamics---including kernel scheduling 
     \begin{equation}
     h_g = \text{MLP}_H\left( [g_{\text{cont}} \parallel \text{Embed}(M_{\text{type}}) \parallel \text{Embed}(A_{\text{gen}})] \right)
     \end{equation}
-    \item \textbf{Microarchitectural Cross-Attention (MCA):} To model the interaction between workload memory access patterns and hardware pipelines, workload queries attend to hardware keys and values:
+    \item \textbf{Microarchitectural Bipartite Cross-Attention (MCA):} Rather than concatenating heterogeneous workload and hardware features into a single unconstrained MLP, PICAN projects workload features and hardware specifications into distinct embedding spaces. A bipartite cross-attention layer allows the workload embedding to attend to the hardware embedding:
     \begin{equation}
     Q = W_q w_x, \quad K = W_k h_g, \quad V = W_v h_g
     \end{equation}
@@ -575,16 +575,16 @@ The empirical upper latency bound used for SLA verification in Eq.~\eqref{eq:opt
 \hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)
 \end{equation}
 
-\subsection{Component E: Regret-Optimal Active Acquisition (ROAA)}
+\subsection{Component E: Active Few-Shot Calibration and Boundary Acquisition Heuristic}
 When introducing an unfamiliar GPU architecture, rather than conducting exhaustive profiling or relying purely on zero-shot inference, SHIFT-GPU supports active few-shot calibration within a minimal measurement budget $k \in \{1, 3, 5\}$.
 
-Traditional active learning policies select samples maximizing predictive variance ($\arg\max \sigma^2(x)$). However, in systems infrastructure, variance on workloads that are trivially feasible ($T \ll T_{\max}$) or hopelessly infeasible ($T \gg T_{\max}$) yields zero operational utility. We propose \textbf{ROAA} (\textit{Regret-Optimal Active Acquisition}), which prioritizes candidate workloads in the critical boundary ambiguity region:
+Traditional active learning policies select samples maximizing predictive variance ($\arg\max \sigma^2(x)$). In systems infrastructure, variance on workloads that are far from the feasibility threshold ($T \ll T_{\max}$ or $T \gg T_{\max}$) may provide limited boundary discrimination. To explore threshold sensitivity, we formulate a boundary-focused acquisition heuristic, denoted \textbf{ROAA} (\textit{Regret-Oriented Active Acquisition}):
 \begin{equation}
 \label{eq:roaa}
 \alpha_{\text{ROAA}}(x) = \hat{\sigma}(x, g) \cdot \exp\left( - \frac{(\hat{T}(x, g) - T_{\max})^2}{2 \hat{\sigma}^2(x, g)} \right) \cdot \left(\frac{\hat{P}(x, g)}{TDP(g)}\right)
 \end{equation}
 
-The first term reflects model uncertainty, the second term evaluates Gaussian proximity to the critical SLA decision boundary $T_{\max}$, and the third term incorporates potential energy impact. 
+The first term reflects model uncertainty, the second term evaluates Gaussian proximity to the critical SLA decision boundary $T_{\max}$, and the third term incorporates potential energy impact. We emphasize that Eq.~\eqref{eq:roaa} is an empirical heuristic designed to sample boundary edge cases rather than a provably optimal policy; its objective is to explore boundary configurations rather than minimize global regression error across all workloads. 
 
 Given $k$ probed measurements, PICAN adapts its representation via Feature-wise Linear Modulation (FiLM) \citep{perez2018film} applied to the latent space:
 \begin{equation}
@@ -767,25 +767,25 @@ $k = 0$ (Zero-Shot) & Untrained Baseline & 7.02 & 0.995 \\
 & Uniform Random & 7.59 & 0.995 \\
 & K-Means Feature Diversity & 9.16 & 0.993 \\
 & Maximal Predictive Uncertainty & 7.68 & 0.994 \\
-& \textbf{Regret-Optimal Probing (ROAA)} & \textbf{8.57} & \textbf{0.994} \\
+& Boundary Heuristic (ROAA) & 8.57 & 0.994 \\
 \midrule
 \multirow{4}{*}{$k = 3$ (Three-Shot)} 
 & Uniform Random & 7.20 & 0.995 \\
 & K-Means Feature Diversity & 8.20 & 0.994 \\
 & Maximal Predictive Uncertainty & 7.95 & 0.994 \\
-& \textbf{Regret-Optimal Probing (ROAA)} & \textbf{8.63} & \textbf{0.993} \\
+& Boundary Heuristic (ROAA) & 8.63 & 0.993 \\
 \midrule
 \multirow{4}{*}{$k = 5$ (Five-Shot)} 
-& Uniform Random & 6.60 & 0.996 \\
-& K-Means Feature Diversity & 10.02 & 0.992 \\
+& \textbf{Uniform Random} & \textbf{6.60} & \textbf{0.996} \\
+& K-Means Feature Diversity & 9.69 & 0.992 \\
 & Maximal Predictive Uncertainty & 7.84 & 0.994 \\
-& \textbf{Regret-Optimal Probing (ROAA)} & \textbf{8.69} & \textbf{0.993} \\
+& Boundary Heuristic (ROAA) & 8.69 & 0.993 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-The empirical results confirm that zero-shot PICAN achieves a low MdAPE of 7.02\% without requiring any probing data on unseen accelerators. When calibration budgets are available, FiLM parameter adaptation refines workload representations, with uniform random probing reaching 6.60\% MdAPE at $k=5$. Furthermore, Figure \ref{fig:performance_panel}(b) confirms that SHIFT-GPU scales smoothly across model sizes from 0.5B to 72B parameters.
+The empirical results confirm that zero-shot PICAN achieves a low MdAPE of 7.02\% without requiring any probing data on unseen accelerators. When calibration budgets are available, FiLM parameter adaptation refines workload representations. Notably, uniform random sampling achieves the lowest global latency prediction error across all budgets (7.59\% at $k=1$, 7.20\% at $k=3$, and reaching 6.60\% MdAPE at $k=5$). In contrast, the boundary-targeted heuristic (ROAA) yields higher global prediction error (8.57\%--8.69\%), performing worse than uniform random sampling across all budgets. This occurs because ROAA selectively queries configurations concentrated tightly around the SLA threshold $T_{\max}$; while this enriches local discrimination near the decision threshold, adapting FiLM solely on boundary configurations distorts global calibration across the broader workload space. Similarly, K-Means feature diversity yields 9.69\% MdAPE at $k=5$. These findings demonstrate that for few-shot adaptation across diverse serving workloads, simple uniform random profiling provides superior coverage and generalizability compared to boundary-biased heuristics. Furthermore, Figure \ref{fig:performance_panel}(b) confirms that SHIFT-GPU scales smoothly across model sizes from 0.5B to 72B parameters.
 
 \begin{figure*}[t]
 \centering
@@ -903,12 +903,12 @@ Baseline C: Matched XGBoost Rerun \citep{fadel2026wattgpu} & 12.16 & 82.0 & 1 / 
 }
 \end{table}
 
-Ablating the deterministic microarchitectural Roofline base (Ablation A) causes ITL prediction error to surge from 7.02\% to 20.59\% (+193\% relative error increase) and drives SLA violations up to 1.6\% (2 / 125), demonstrating that physical inductive anchoring is essential to prevent unconstrained neural networks from extrapolating unphysical execution times on unseen hardware. Replacing bipartite cross-attention with a flat concatenated MLP (Ablation B) increases error from 7.02\% to 10.57\%, demonstrating the importance of query-key attention between workload dimensions and accelerator execution units. Baseline C (our matched XGBoost rerun) achieves 12.16\% MdAPE, confirming that SHIFT-GPU's physics-guided formulation outperforms standard gradient-boosted decision trees by 42.3\% on unseen hardware.
+Ablating the deterministic microarchitectural Roofline base (Ablation A) causes ITL prediction error to surge from 7.02\% to 20.59\% (+193\% relative error increase) and drives SLA violations up to 1.6\% (2 / 125), demonstrating that physical inductive anchoring is essential to prevent unconstrained neural networks from extrapolating unphysical execution times on unseen hardware. Replacing bipartite cross-attention with a flat concatenated MLP (Ablation B) increases error from 7.02\% to 10.57\%, confirming the empirical value of learning structured, separated latent representations for workloads and accelerators rather than flat feature concatenation. Baseline C (our matched XGBoost rerun) achieves 12.16\% MdAPE, confirming that SHIFT-GPU's physics-guided formulation outperforms standard gradient-boosted decision trees by 42.3\% on unseen hardware.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig7_summary_heatmap.png}
-\caption{Systematic component ablation and production recommendation trade-offs. (a) Systematic component ablation on zero-shot LOGO MdAPE (\%), demonstrating that removing the physics Roofline base (Ablation A) surges error by +210\% (to 21.36\%), while removing cross-attention (Ablation B) increases error to 8.28\%. (b) Production hardware recommendation frontier comparing mean cluster power draw (Watts) versus SLA violation rate (\%) under a 35 ms latency constraint.}
+\caption{Systematic component ablation and production recommendation trade-offs. (a) Systematic component ablation on zero-shot LOGO MdAPE (\%), demonstrating that removing the physics Roofline base (Ablation A) surges error to 20.59\% (+193\% relative increase), while removing cross-attention (Ablation B) increases error to 10.57\%. (b) Production hardware recommendation frontier comparing mean cluster power draw (Watts) versus SLA violation rate (\%) under a 35 ms latency constraint.}
 \label{fig:summary_heatmap}
 \end{figure*}
 
@@ -937,6 +937,9 @@ hardware features and does not by itself establish a violation of
 exchangeability. Target-GPU profiling may help calibration, but
 the current experiments do not establish that a small profiling
 budget restores nominal coverage.
+
+\textbf{Few-shot active acquisition:}
+While we formulated a boundary-targeted acquisition heuristic (ROAA) to explore threshold configurations, empirical results showed that uniform random sampling achieved lower global regression error across all tested budgets ($k \in \{1, 3, 5\}$). Biasing few-shot measurements toward decision thresholds does not improve global latency estimation across the broader workload space. Identifying acquisition functions that simultaneously minimize boundary classification risk and global regression error remains an open problem.
 
 \textbf{Hardware scope:}
 The benchmark covers eight NVIDIA GPU models. Holding out one GPU
