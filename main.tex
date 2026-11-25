@@ -77,13 +77,15 @@ Large Language Models \sep GPU Infrastructure \sep Physics-Informed Neural Netwo
 \section{Introduction}
 \label{sec:intro}
 
-The exponential growth of generative artificial intelligence and Large Language Models (LLMs) has introduced unprecedented computational and environmental demands on cloud data center infrastructure \citep{strubell2019energy, patterson2021carbon}. In contemporary enterprise deployments, inference represents the dominant fraction of the total operational expenditure and carbon footprint over a model's operational lifecycle. Serving autoregressive transformer architectures requires maintaining strict Service Level Agreements (SLAs)---typically specified as an upper bound on mean Inter-Token Latency (ITL) or Time to First Token (TTFT)---while simultaneously minimizing total cluster energy consumption and power draw \citep{kwon2023vllm}.
+The exponential growth of generative artificial intelligence and Large Language Models (LLMs) has introduced unprecedented computational and environmental demands on cloud data center infrastructure \citep{strubell2019energy, patterson2021carbon, suscom_desislavov2023}. In contemporary enterprise deployments, inference represents the dominant fraction of the total operational expenditure and carbon footprint over a model's operational lifecycle. Serving autoregressive transformer architectures requires maintaining strict Service Level Agreements (SLAs)---typically specified as an upper bound on mean Inter-Token Latency (ITL) or Time to First Token (TTFT)---while simultaneously minimizing total cluster energy consumption and operational power draw \citep{kwon2023vllm, suscom_malekloo2018}.
 
-To optimize throughput per Watt, modern cloud providers deploy heterogeneous GPU clusters spanning multiple architectural generations, including NVIDIA Hopper (H100, H200), Ada Lovelace (L40S, L4), Ampere (A100, A30), Turing (T4), and Volta (V100). When an infrastructure operator seeks to deploy a new LLM workload, they must decide: \textit{Which GPU candidate satisfies the required latency SLA with the lowest operational power draw?} 
+To optimize throughput per Watt, modern cloud providers deploy heterogeneous GPU clusters spanning multiple architectural generations, including NVIDIA Hopper (H100, H200), Ada Lovelace (L40S, L4), Ampere (A100, A30), Turing (T4), and Volta (V100). When an infrastructure operator seeks to deploy a new LLM workload, they must decide: \textit{Which GPU candidate satisfies the required latency SLA with the lowest operational power draw?}
 
-Traditionally, answering this question requires exhaustive physical profiling: systematically deploying the LLM across every candidate accelerator under varying prompt lengths, concurrency arrival rates, and batch sizes. However, with dozens of active foundation models and hundreds of potential accelerator configurations, empirical profiling incurs massive energy consumption, creates severe scheduling overhead, and delays workload onboarding. 
+In the sustainable computing literature, optimizing data center hardware allocation and operational energy has evolved from virtualized machine consolidation \citep{suscom_malekloo2018, suscom_kumar2022} and server node-level power capping coordination \citep{suscom_powercoord2020} toward multi-objective optimization for ML inference configurations \citep{suscom_multiobj2026} and predictive perception layers for LLM serving on high-performance computing clusters \citep{suscom_forecasting2026}. Furthermore, queueing-theoretic studies in this journal have revealed that aggressive power minimization risks severe tail latency spikes when operational envelopes are improperly matched to workload demands \citep{suscom_tradeoffs2025}, while macroscopic analyses of AI inference energy have proven that naive parameter scaling fails to capture memory-bandwidth bottlenecks \citep{suscom_desislavov2023}.
 
-To bypass exhaustive profiling, recent work has explored metadata-based regression models. Notably, WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters (e.g., parameter counts, layer depths, attention heads) and static GPU specifications (e.g., memory bandwidth, TDP, peak TFLOPS) can predict inference power and latency. However, as demonstrated in our rigorous empirical baseline analysis, existing metadata models suffer from a fundamental failure mode: \textbf{microarchitectural covariate shift}. When evaluated in-distribution (standard 5-fold cross-validation), tree models achieve an impressive Median Absolute Percentage Error (MdAPE) of 2.84\% for latency and 2.45\% for power. Yet, when evaluated under Leave-One-GPU-Out (LOGO)---simulating the arrival of an unfamiliar hardware architecture---the latency prediction error surges by over 300\% to 12.16\% (and exceeds 20\% on modern architectures such as L4). 
+Traditionally, answering the hardware selection question requires exhaustive physical profiling: systematically deploying the LLM across every candidate accelerator under varying prompt lengths, concurrency arrival rates, and batch sizes. However, with dozens of active foundation models and hundreds of potential accelerator configurations, empirical profiling incurs massive energy consumption, creates severe scheduling overhead, and delays workload onboarding.
+
+To bypass exhaustive profiling, recent work has explored metadata-based regression models. Notably, WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters and static GPU specifications can predict inference power and latency. However, as demonstrated in our rigorous empirical baseline analysis, existing metadata models suffer from a fundamental failure mode: \textbf{microarchitectural covariate shift on unseen hardware}. When evaluated in-distribution (standard 5-fold cross-validation), tree models achieve an impressive Median Absolute Percentage Error (MdAPE) of 2.84\% for latency and 2.45\% for power. Yet, when evaluated under Leave-One-GPU-Out (LOGO)---simulating the arrival of an unfamiliar hardware architecture---the latency prediction error surges by over 300\% to 12.16\% (and exceeds 20\% on modern architectures such as L4).
 
 In a production scheduling environment, this degradation is severe. Because point-estimate models lack calibrated uncertainty bounds and microarchitectural inductive biases, they frequently recommend under-provisioned GPUs that suffer uncalibrated SLA violations or over-provisioned accelerators that waste substantial energy.
 
@@ -103,10 +105,12 @@ The remainder of this paper is structured as follows. Section \ref{sec:related} 
 \section{Related Work}
 \label{sec:related}
 
-\subsection{Energy-Aware Resource Management in Sustainable Computing}
-Optimizing energy efficiency and carbon emissions in machine learning systems has emerged as a primary focus in sustainable computing literature. In this journal, Casta{\~n}o et al. \citep{suscom_multiobj2026} proposed data-driven multi-objective optimization frameworks to balance energy, performance, and financial cost during ML inference configuration selection. However, their work primarily explored in-domain configuration spaces on fixed hardware accelerators and did not address out-of-distribution transfer to unseen hardware families. In parallel, Aguirre-Usandizaga et al. \citep{suscom_forecasting2026} designed a forecasting-based perception layer for energy-aware resource management in LLM serving on high-performance computing clusters, highlighting the critical role of predictive models in proactive cluster scheduling. Complementing these empirical serving systems, Yao et al. \citep{suscom_tradeoffs2025} investigated queueing and power trade-offs in deep-learning training systems from an analytical perspective, establishing that operational response times and queueing dynamics are tightly coupled to hardware power capping envelopes.
+\subsection{Inference Sustainability and Resource Management in Sustainable Computing}
+Sustainable computing literature has extensively studied the dual challenges of performance assurance and energy minimization in cloud infrastructure. Foundational work by Malekloo et al. \citep{suscom_malekloo2018} established the mathematical principles of SLA-compliant, energy-efficient resource allocation, formulating constrained optimization models that balance aggressive power minimization against SLA violation penalties in virtualized environments. Expanding upon these principles, Kumar et al. \citep{suscom_kumar2022} provided a comprehensive taxonomy of machine learning methods for cloud workflow scheduling, virtual machine placement, and energy-aware server consolidation, explicitly highlighting that black-box regression models are vulnerable to severe prediction collapse when operating outside their training distributions. At the physical node level, Azimi et al. \citep{suscom_powercoord2020} introduced PowerCoord, demonstrating coordinated dynamic power capping across heterogeneous multi-CPU and multi-GPU architectures using reinforcement learning under thermal design boundaries.
 
-SHIFT-GPU directly builds upon and advances this body of work by providing the missing bridge: \textit{How can an energy-aware perception layer accurately forecast performance and power on newly introduced hardware architectures where historical traces do not exist?}
+With the advent of deep learning and Large Language Models, the relationship between hardware utilization, power draw, and execution latency became governed by complex microarchitectural constraints. Desislavov et al. \citep{suscom_desislavov2023} conducted an exhaustive empirical analysis of AI inference energy consumption across diverse model architectures and hardware platforms, demonstrating that classical parameter-versus-performance scaling laws fail to capture non-linear memory and computational saturation. Specifically, they revealed that operational energy efficiency is dominated by arithmetic intensity and memory bandwidth bottlenecks rather than parameter count alone. Addressing the operational selection problem, Casta{\~n}o et al. \citep{suscom_multiobj2026} proposed data-driven multi-objective optimization frameworks to navigate Pareto trade-offs across energy consumption, execution performance, and financial cost during ML inference configuration selection. However, their optimization search was restricted to pre-profiled, static hardware platforms and explicitly identified zero-shot transfer to newly released hardware accelerators as a vital open problem. Complementing these empirical systems, Yao et al. \citep{suscom_tradeoffs2025} investigated power and response-time trade-offs from an analytical queueing perspective, rigorously proving that aggressive power capping creates tail latency instability unless buffer margins are calibrated to execution variability. Recently, Aguirre-Usandizaga et al. \citep{suscom_forecasting2026} developed a forecasting-based perception layer for energy-aware resource management in LLM serving on HPC clusters, establishing that proactive predictive modeling is indispensable for mitigating cluster over-provisioning and idle energy waste.
+
+The SHIFT-GPU framework presented in this paper directly emerges from and unifies this rich body of research published in \textit{Sustainable Computing: Informatics and Systems}. Specifically, SHIFT-GPU resolves the critical open challenges highlighted by this lineage: (1) we translate the memory-bandwidth bottleneck insights of Desislavov et al. \citep{suscom_desislavov2023} into an inductive neural network architecture by embedding an analytical Roofline memory-streaming floor ($T_{\text{roof}}$); (2) we solve the out-of-domain hardware generalization challenge posed by Casta{\~n}o et al. \citep{suscom_multiobj2026} and Aguirre-Usandizaga et al. \citep{suscom_forecasting2026} through microarchitectural bipartite cross-attention; (3) we address the distribution-shift vulnerability identified by Kumar et al. \citep{suscom_kumar2022} using group-conditional conformal calibration; and (4) we operationalize the queueing power-latency trade-offs of Yao et al. \citep{suscom_tradeoffs2025} and the SLA-compliance paradigm of Malekloo et al. \citep{suscom_malekloo2018} by enforcing calibrated tail-latency bounds to eliminate SLA violations during energy-minimizing hardware selection.
 
 \subsection{LLM Serving Systems and Performance Characterization}
 Autoregressive LLM inference consists of two distinct operational phases: the compute-bound prefill phase (processing prompt tokens in parallel) and the memory-bandwidth-bound decode phase (generating tokens sequentially) \citep{kwon2023vllm}. Modern serving frameworks employ specialized runtime mechanisms to maximize hardware saturation: vLLM \citep{kwon2023vllm} introduces PagedAttention and continuous batching for efficient KV-cache memory management, while DeepSpeed-Inference \citep{aminabadi2022deepspeed} leverages customized transformer execution kernels, multi-GPU tensor slicing, and memory offloading. Despite these software advances, the underlying hardware efficiency is dictated by the classical Roofline model \citep{williams2009roofline}, which defines the operational boundaries between compute-limited and bandwidth-limited execution. WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters and static GPU specifications can predict inference power and latency across unseen GPUs. In our matched rerun under Leave-One-GPU-Out (LOGO) cross-validation, XGBoost achieves 12.16\% median absolute percentage error for inter-token latency. Because standard tree models lack microarchitectural inductive biases and calibrated uncertainty intervals, their point estimates risk triggering uncalibrated SLA violations during deployment.
@@ -132,7 +136,7 @@ For any workload-hardware pair $(x, g)$, the system exhibits two ground-truth ex
 \end{enumerate}
 
 \subsection{The Constrained Hardware Selection Problem}
-Given a target workload $x \in \mathcal{X}$ and a latency Service Level Agreement threshold $T_{\max} \in \mathbb{R}^+$, the cluster scheduler's objective is to select the accelerator $g^* \in \mathcal{G}$ that minimizes operational power consumption while satisfying the latency constraint with confidence $1 - \alpha$:
+Following the SLA-compliant resource allocation principles formalized by Malekloo et al. \citep{suscom_malekloo2018} and the Pareto optimization formulation of Casta{\~n}o et al. \citep{suscom_multiobj2026}, we formulate accelerator selection as a constrained optimization problem. Given a target workload $x \in \mathcal{X}$ and a latency Service Level Agreement threshold $T_{\max} \in \mathbb{R}^+$, the cluster scheduler's objective is to select the accelerator $g^* \in \mathcal{G}$ that minimizes operational power consumption while satisfying the latency constraint with confidence $1 - \alpha$:
 \begin{equation}
 \label{eq:opt_problem}
 g^* = \arg\min_{g \in \mathcal{G}} P(x, g) \quad \text{subject to} \quad \mathbb{P}\left(T(x, g) \le T_{\max}\right) \ge 1 - \alpha
@@ -155,296 +159,309 @@ where $\mathbb{I}(\cdot)$ is the indicator function and $\lambda_{\text{SLA}} \g
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-    x=1cm, y=1cm,
-    font=\sffamily,
+    x=1.0cm, y=1.0cm,
     >=Stealth,
     container/.style={
         draw=#1!75!black,
-        fill=#1!3,
-        line width=1.1pt,
-        rounded corners=5pt
-    },
-    block/.style={
-        draw=#1!80!black,
         fill=white,
-        line width=0.8pt,
+        line width=0.85pt,
+        rounded corners=4pt
+    },
+    tag/.style={
+        draw=#1!75!black,
+        fill=#1!10,
+        line width=0.7pt,
         rounded corners=3pt,
-        align=center,
-        inner sep=3.5pt
+        font=\sffamily\bfseries\scriptsize,
+        text=#1!90!black,
+        inner sep=3pt
     },
     card/.style={
         draw=#1!75!black,
         fill=white,
-        line width=0.8pt,
+        line width=0.7pt,
         rounded corners=3pt,
-        align=left,
-        inner sep=4pt
+        align=center,
+        inner sep=3.5pt
+    },
+    block/.style={
+        draw=#1!80!black,
+        fill=white,
+        line width=0.7pt,
+        rounded corners=3pt,
+        align=center,
+        inner sep=3pt
     },
     tensor/.style={
         draw=#1!80!black,
         fill=#1!12,
-        line width=0.8pt,
+        line width=0.7pt,
         rounded corners=2pt,
         align=center,
         font=\bfseries\scriptsize,
-        inner sep=3pt
+        inner sep=2.5pt
     },
     op/.style={
         draw=#1!90!black,
         fill=#1!20,
         circle,
-        line width=1.0pt,
+        line width=0.9pt,
         align=center,
         font=\bfseries\normalsize,
         inner sep=1.5pt
     },
     arrow/.style={
-        -{Stealth[length=2.2mm,width=1.6mm]},
-        line width=1.1pt,
+        -{Stealth[length=2.0mm,width=1.4mm]},
+        line width=0.9pt,
         draw=#1
     },
     dasharrow/.style={
-        -{Stealth[length=2.2mm,width=1.6mm]},
-        line width=1.1pt,
+        -{Stealth[length=2.0mm,width=1.4mm]},
+        line width=0.9pt,
         dashed,
         draw=#1
     }
 ]
 
 % ==============================================================================
-% 0. TOP TITLE BANNER
+% TOP BANNER
 % ==============================================================================
-\draw[fill=bannerbg, draw=black, rounded corners=4pt] (0, 12.0) rectangle (25.4, 12.85);
-\node[text=white, font=\bfseries\normalsize] at (12.7, 12.42) {SHIFT-GPU Architecture: PICAN Physics-Informed Cross-Attention Network \& Conformal Calibrator};
+\draw[fill=bannerbg, draw=black!80, line width=0.8pt, rounded corners=3pt] (0, 10.1) rectangle (24.75, 10.8);
+\node[text=white, font=\sffamily\bfseries\small] at (12.375, 10.45) {SHIFT-GPU Architecture: Physics-Informed Cross-Attention Network (PICAN) \& Conformal Selection Pipeline};
 
 % ==============================================================================
-% 1. CONTAINER 1: SPECIFICATION & ENCODERS (X: 0 to 4.8, Y: 0.1 to 11.7)
+% 1. CONTAINER 1: SPECIFICATION & ENCODERS
 % ==============================================================================
-\draw[container=cblue] (0, 0.1) rectangle (4.8, 11.7);
-\fill[cblue, rounded corners=3pt] (0.1, 11.05) rectangle (4.7, 11.6);
-\node[text=white, font=\bfseries\scriptsize] at (2.4, 11.32) {1. Specification \& Encoders};
+\draw[container=cblue] (0.0, 0.6) rectangle (5.75, 9.85);
+\node[tag=cblue, anchor=north] at (2.875, 9.75) {(1) Workload \& Hardware Encoding};
 
-% Workload Spec Card
-\node[card=cblue, anchor=north] (win) at (2.4, 10.9) {
-    \parbox{4.2cm}{
-        \textcolor{cblue}{\textbf{\scriptsize Workload Spec $x = (m, s) \in \mathcal{X}$}}\\[0.2em]
-        \textbf{\tiny Model Geometry $m$:}\\
-        \tiny $\bullet$ Parameters $N_{\text{p}}$, Dim $H$, Layers $L$\\
-        \tiny $\bullet$ Attention Heads $N_h$, KV-cache $C_{\text{kv}}$\\
-        \textbf{\tiny Serving Scenario $s$:}\\
-        \tiny $\bullet$ Concurrency Scaling: $B(s)$\\
-        \tiny $\bullet$ Offline Batch vs Server Arrivals
+% Workload Spec
+\node[card=cblue, anchor=north] (win) at (2.875, 9.15) {
+    \parbox{5.1cm}{
+        \centering
+        \textcolor{cblue}{\textbf{\scriptsize Workload Specification $x = (m, s) \in \mathcal{X}$}}\\[0.15em]
+        \tiny Model Geometry: $m = [N_{\text{p}}, H, L, N_h, N_{kv}, C_{kv}] \in \mathbb{R}^6$\\[0.1em]
+        \tiny Serving Scenario: $s = [B(s), \text{scenario}] \in \mathbb{R}^2$
     }
 };
 
-% Workload MLP Encoder
-\node[block=cblue, anchor=north] (wenc) at (2.4, 8.65) {
-    \parbox{4.2cm}{
-        \centering \textbf{\scriptsize Workload Encoder $E_W$}\\
-        \tiny $\text{MLP}_W$: Linear $\to$ LayerNorm $\to$ GELU
+% Workload Encoder
+\node[block=cblue, anchor=north] (wenc) at (2.875, 7.85) {
+    \parbox{4.9cm}{
+        \centering
+        \textbf{\scriptsize Workload Encoder $E_W$}\\
+        \tiny $\mathrm{MLP}_W: \mathbb{R}^8 \xrightarrow{\text{Linear}} \mathbb{R}^{256} \xrightarrow{\text{LayerNorm}} \mathbb{R}^d$
     }
 };
 \draw[arrow=cblue] (win) -- (wenc);
 
-% Workload Latent Tensor w_x
-\node[tensor=cblue, anchor=north] (wlat) at (2.4, 7.55) {
-    \parbox{3.8cm}{\centering Workload Latent $w_x \in \mathbb{R}^d$}
+% Workload Latent
+\node[tensor=cblue, anchor=north] (wlat) at (2.875, 6.75) {
+    \parbox{4.2cm}{\centering Workload Latent $w_x \in \mathbb{R}^d$}
 };
 \draw[arrow=cblue] (wenc) -- (wlat);
 
-% Hardware Latent Tensor h_g
-\node[tensor=cteal, anchor=north] (hlat) at (2.4, 6.35) {
-    \parbox{3.8cm}{\centering Hardware Latent $h_g \in \mathbb{R}^d$}
+% Zero-Leakage Blinding Divider
+\node[draw=cred, fill=credbg, dashed, line width=0.7pt, rounded corners=2pt, anchor=north] (blind) at (2.875, 5.8) {
+    \parbox{4.9cm}{
+        \centering
+        \textcolor{cred!90!black}{\textbf{\tiny Zero-Leakage Blinding: $[y_{\text{eval}} \leftarrow \mathrm{NaN}]$ prior to decision}}
+    }
 };
 
-% Hardware MLP Encoder
-\node[block=cteal, anchor=north] (henc) at (2.4, 5.3) {
-    \parbox{4.2cm}{
-        \centering \textbf{\scriptsize Hardware Encoder $E_H$}\\
-        \tiny $\text{MLP}_H$: Linear $\to$ LayerNorm $\to$ GELU
+% Hardware Latent
+\node[tensor=cteal, anchor=north] (hlat) at (2.875, 4.8) {
+    \parbox{4.2cm}{\centering Hardware Latent $h_g \in \mathbb{R}^d$}
+};
+
+% Hardware Encoder
+\node[block=cteal, anchor=north] (henc) at (2.875, 3.8) {
+    \parbox{4.9cm}{
+        \centering
+        \textbf{\scriptsize Hardware Encoder $E_H$}\\
+        \tiny $\mathrm{MLP}_H: \mathbb{R}^8 \xrightarrow{\text{Linear}} \mathbb{R}^{256} \xrightarrow{\text{LayerNorm}} \mathbb{R}^d$
     }
 };
 \draw[arrow=cteal] (henc) -- (hlat);
 
-% Hardware Spec Card
-\node[card=cteal, anchor=north] (hin) at (2.4, 4.2) {
-    \parbox{4.2cm}{
-        \textcolor{cteal}{\textbf{\scriptsize Hardware Pool $g \in \mathcal{G}$ (8 GPUs)}}\\[0.2em]
-        \textbf{\tiny Microarchitectural Specs:}\\
-        \tiny $\bullet$ Bandwidth $B_{\text{mem}}$, Peak Compute $F_{\text{peak}}$\\
-        \tiny $\bullet$ VRAM $M_{\text{size}}$, TDP, Arch Family\\
-        \textbf{\tiny Evaluated Target Hardware:}\\
-        \tiny $\bullet$ Unseen Target $g_{\text{target}}$ (Zero-Shot LOGO)
+% Hardware Spec
+\node[card=cteal, anchor=north] (hin) at (2.875, 2.5) {
+    \parbox{5.1cm}{
+        \centering
+        \textcolor{cteal}{\textbf{\scriptsize Hardware Candidate $g \in \mathcal{G}$ (8 GPU Models)}}\\[0.15em]
+        \tiny Specs: $[B_{\text{mem}}, F_{\text{peak}}, M_{\text{size}}, \mathrm{TDP}, f_{\text{base}}, A_{\text{gen}}] \in \mathbb{R}^8$\\[0.1em]
+        \tiny Zero-Shot Transfer: Unseen Target $g_{\text{target}} \notin \mathcal{G}_{\text{train}}$
     }
 };
 \draw[arrow=cteal] (hin) -- (henc);
 
-% Zero-Leakage Blinding Quarantine Badge
-\node[fill=credbg, draw=cred, line width=0.6pt, rounded corners=2pt, font=\bfseries\tiny, text=cred!90!black, text width=4.0cm, align=center, anchor=north] at (2.4, 1.9) {
-    \textbf{Zero-Leakage Blinding Quarantine}\\
-    Targets Wiped to NaN Prior to Decision Lock
-};
-
 % ==============================================================================
-% 2. CONTAINER 2: BIPARTITE CROSS-ATTENTION & FiLM (X: 5.1 to 11.2, Y: 0.1 to 11.7)
+% 2. CONTAINER 2: BIPARTITE CROSS-ATTENTION & FiLM
 % ==============================================================================
-\draw[container=cteal] (5.1, 0.1) rectangle (11.2, 11.7);
-\fill[cteal, rounded corners=3pt] (5.2, 11.05) rectangle (11.1, 11.6);
-\node[text=white, font=\bfseries\scriptsize] at (8.15, 11.32) {2. Cross-Attention Engine (MCA)};
+\draw[container=cteal] (6.20, 0.6) rectangle (12.05, 9.85);
+\node[tag=cteal, anchor=north] at (9.125, 9.75) {(2) Cross-Attention Core (MCA) \& FiLM};
 
-% Linear Projections
-\node[block=cblue, anchor=north west] (linq) at (5.35, 10.7) {
-    \parbox{1.9cm}{\centering \textbf{\tiny Query $W_q$}\\\tiny $Q = W_q w_x$}
+% Projections Row: Q, K, V side-by-side
+\node[block=cblue, anchor=north] (linq) at (7.1, 9.15) {
+    \parbox{1.5cm}{\centering \textbf{\tiny Query $W_q$}\\\tiny $Q=W_q w_x$}
 };
-\node[block=cteal, anchor=north west] (link) at (5.35, 9.3) {
-    \parbox{1.9cm}{\centering \textbf{\tiny Key $W_k$}\\\tiny $K = W_k h_g$}
+\node[block=cteal, anchor=north] (link) at (9.125, 9.15) {
+    \parbox{1.5cm}{\centering \textbf{\tiny Key $W_k$}\\\tiny $K=W_k h_g$}
 };
-\node[block=cteal, anchor=north west] (linv) at (5.35, 7.9) {
-    \parbox{1.9cm}{\centering \textbf{\tiny Value $W_v$}\\\tiny $V = W_v h_g$}
+\node[block=cteal, anchor=north] (linv) at (11.15, 9.15) {
+    \parbox{1.5cm}{\centering \textbf{\tiny Value $W_v$}\\\tiny $V=W_v h_g$}
 };
 
-\draw[arrow=cblue] (wlat.east) -| ++(0.18, 0) |- (linq.west);
-\draw[arrow=cteal] (hlat.east) -| ++(0.18, 0) |- (link.west);
-\draw[arrow=cteal] (hlat.east) -| ++(0.18, 0) |- (linv.west);
+% Clean inputs from Stage 1 into Q, K, V
+\draw[arrow=cblue] (wlat.east) -| (linq.south);
+\draw[arrow=cteal] (hlat.east) -| ++(0.3, 0) |- (link.west);
+\draw[arrow=cteal] (hlat.east) -| ++(0.3, 0) |- (linv.west);
 
-% Scaled Dot-Product Attention Module
-\node[card=cpurple, anchor=north west] (attn) at (7.65, 10.7) {
-    \parbox{3.1cm}{
-        \centering \textbf{\scriptsize Scaled Dot-Product Attention}\\[0.2em]
-        \tiny $A = \text{Softmax}(Q K^T / \sqrt{d})$\\[0.2em]
-        \tiny Context $c = A V \in \mathbb{R}^d$
+% Cross-Attention Block spanning width
+\node[card=cpurple, anchor=north] (attn) at (9.125, 7.85) {
+    \parbox{5.1cm}{
+        \centering
+        \textbf{\scriptsize Multi-Head Scaled Cross-Attention}\\[0.15em]
+        \tiny $A = \mathrm{softmax}\left(\frac{Q K^\top}{\sqrt{d}}\right) \in \mathbb{R}^{d \times d}, \quad c = A V \in \mathbb{R}^d$
     }
 };
-\draw[arrow=cblue] (linq.east) -- (attn.west |- linq.east);
-\draw[arrow=cteal] (link.east) -| ++(0.12, 0) |- (attn.west);
-\draw[arrow=cteal] (linv.east) -| ++(0.12, 0) |- (attn.south west);
+\draw[arrow=cblue] (linq.south) -- (attn.north -| linq.south);
+\draw[arrow=cteal] (link.south) -- (attn.north -| link.south);
+\draw[arrow=cteal] (linv.south) -- (attn.north -| linv.south);
 
 % Add & LayerNorm Operator
-\node[op=cblue] (add1) at (9.2, 8.8) {$\bigoplus$};
-\node[font=\tiny, anchor=west] at (9.6, 8.8) {Add \& LN};
+\node[op=cblue] (add1) at (9.125, 6.7) {$\bigoplus$};
+\node[font=\tiny, anchor=west] at (9.5, 6.7) {Add \& LN};
 \draw[arrow=cpurple] (attn.south) -- (add1.north);
 
-% Skip Connection from w_x to Add1
-\draw[arrow=cblue] (wlat.east) -- ++(0.25, 0) -- ++(0, 1.25) -- (add1.west);
+% Clean Skip Connection from w_x directly into add1 from the left
+\draw[arrow=cblue] (wlat.east) -| ++(0.5, 0) |- (add1.west);
 
-% Feed-Forward Network (FFN)
-\node[block=cblue, anchor=north] (ffn) at (8.15, 7.6) {
-    \parbox{5.5cm}{
-        \centering \textbf{\scriptsize Feed-Forward Network (FFN)}\\
-        \tiny $\text{Linear}(d \to 4d) \to \text{GELU} \to \text{Linear}(4d \to d) \to \text{Add} \& \text{LN} \implies z \in \mathbb{R}^d$
+% Feed-Forward Network
+\node[block=cblue, anchor=north] (ffn) at (9.125, 5.9) {
+    \parbox{5.1cm}{
+        \centering
+        \textbf{\scriptsize Feed-Forward Network (FFN)}\\
+        \tiny $z = \mathrm{LN}\left(z_0 + W_2 \, \mathrm{GELU}(W_1 z_0) \right) \in \mathbb{R}^d$
     }
 };
 \draw[arrow=cblue] (add1.south) |- (ffn.north);
 
 % FiLM Modulation Block
-\node[block=camber, fill=camberbg, anchor=north] (film) at (8.15, 5.8) {
-    \parbox{5.5cm}{
-        \centering \textbf{\scriptsize FiLM Latent Modulation Layer}\\
-        \tiny Zero-drift latent adaptation via scale \& shift vectors:\\
-        $$\textstyle z_{\text{adapted}} = \gamma_k \odot z + \beta_k \in \mathbb{R}^d$$
+\node[block=camber, fill=camberbg, anchor=north] (film) at (9.125, 4.65) {
+    \parbox{5.1cm}{
+        \centering
+        \textbf{\scriptsize FiLM Latent Modulation Layer}\\
+        \tiny Zero-drift latent adaptation via scale \& shift vectors:\\[0.15em]
+        \small $z_{\text{adapted}} = \gamma_k \odot z + \beta_k \in \mathbb{R}^d$\\[0.15em]
+        \tiny Zero-Shot: $[\gamma_0=\mathbf{1}, \beta_0=\mathbf{0}]$ $\mid$ Few-Shot: $[\gamma_k, \beta_k]$
     }
 };
 \draw[arrow=cblue] (ffn.south) -- (film.north);
 
-% Adapted Latent Tensor
-\node[tensor=camber, anchor=north] (zfilm) at (8.15, 4.0) {
-    \parbox{5.0cm}{\centering Adapted Representation $z_{\text{adapted}} \in \mathbb{R}^d$}
+% Conditioned Latent Tensor
+\node[tensor=camber, anchor=north] (zfilm) at (9.125, 3.0) {
+    \parbox{4.4cm}{\centering Conditioned Latent $z^* \in \mathbb{R}^d$}
 };
 \draw[arrow=camber] (film.south) -- (zfilm.north);
 
-% Bottom description for FiLM probe adaptation
-\node[card=camber, fill=camberbg, anchor=north] (film_desc) at (8.15, 2.7) {
-    \parbox{5.4cm}{
-        \textbf{\tiny Active Adaptation Capability:}\\
-        \tiny Modulates bottleneck representations from $k \in \{1, 3, 5\}$ sparse micro-probes without modifying backbone weights.
+% Micro-Adaptation note
+\node[card=camber, fill=camberbg, anchor=north] (film_info) at (9.125, 1.95) {
+    \parbox{5.0cm}{
+        \centering
+        \textcolor{camber!90!black}{\textbf{\tiny Parameter-Efficient Micro-Adaptation}}\\[0.1em]
+        \tiny Modulates bottleneck latents using $k \in \{1, 3, 5\}$ probes without altering backbone weights
     }
 };
 
 % ==============================================================================
-% 3. CONTAINER 3: DUAL-PATH PHYSICS & HEADS (X: 11.5 to 17.8, Y: 0.1 to 11.7)
+% 3. CONTAINER 3: DUAL-PATH PHYSICS & HEADS
 % ==============================================================================
-\draw[container=cteal] (11.5, 0.1) rectangle (17.8, 11.7);
-\fill[cteal, rounded corners=3pt] (11.6, 11.05) rectangle (17.7, 11.6);
-\node[text=white, font=\bfseries\scriptsize] at (14.65, 11.32) {3. Dual-Path Physics Recombination};
+\draw[container=cteal] (12.50, 0.6) rectangle (18.35, 9.85);
+\node[tag=cteal, anchor=north] at (15.425, 9.75) {(3) Dual-Path Physics Recombination};
 
-% Path A: Deterministic Microarchitectural Roofline Base
-\node[card=cteal, fill=ctealbg, anchor=north] (roof) at (14.65, 10.9) {
-    \parbox{5.8cm}{
-        \textcolor{cteal}{\textbf{\scriptsize Path A: Microarchitectural Roofline Base}}\\[0.2em]
-        \tiny \textbf{Analytical Memory-Streaming Lower Bound:}
-        $$\textstyle T_{\text{roof}}(x, g) = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}}\right)$$
-        \tiny \textbf{Physical Thermal Constraint:} $P(x, g) \le TDP(g)$
+% Path A: Roofline
+\node[card=cteal, fill=ctealbg, anchor=north] (roof) at (15.425, 9.15) {
+    \parbox{5.1cm}{
+        \centering
+        \textcolor{cteal}{\textbf{\scriptsize Path A: Analytical Roofline Base}}\\[0.15em]
+        \tiny \textbf{Memory-Streaming Floor:}\\[0.1em]
+        $$\textstyle T_{\text{roof}}(x, g) = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}}\right)$$\\[-0.4em]
+        \tiny \textbf{Thermal Envelope:} $P_{\max}(g) = \mathrm{TDP}(g)$
     }
 };
-\draw[arrow=cteal] (hin.east) -| ++(0.3, 0) |- (roof.west);
 
-% Path B: Neural Residual Heads
-\node[block=cteal, anchor=north] (head_lat) at (15.1, 8.5) {
-    \parbox{4.4cm}{\centering \textbf{\tiny Latency Residual Head}\\\tiny $r_\theta \to \text{softplus} \to \exp(\text{softplus}(r_\theta))$}
+% Path B Heads
+\node[block=cteal, anchor=north] (hlat_head) at (14.25, 6.95) {
+    \parbox{1.5cm}{\centering \textbf{\tiny Latency Head}\\\tiny $r_\theta \in \mathbb{R}$}
+};
+\node[block=cteal, anchor=north] (hpwr_head) at (15.85, 6.95) {
+    \parbox{1.4cm}{\centering \textbf{\tiny Power Head}\\\tiny $p_\theta \in \mathbb{R}$}
+};
+\node[block=cteal, anchor=north] (hvar_head) at (17.35, 6.95) {
+    \parbox{1.4cm}{\centering \textbf{\tiny Var Head}\\\tiny $s_\theta \in \mathbb{R}$}
 };
 
-% Multiplicative Physics Floor Operator
-\node[op=cteal, font=\bfseries\Large] (mult) at (12.4, 6.7) {$\bigotimes$};
-\node[font=\bfseries\tiny, cteal, anchor=north, align=center] at (12.4, 6.15) {Multiplicative\\Physics Floor};
+\draw[arrow=camber] (zfilm.east) -| ++(0.18, 0) |- (hlat_head.west);
+\draw[arrow=camber] (zfilm.east) -| ++(0.18, 0) |- (hpwr_head.west);
+\draw[arrow=camber] (zfilm.east) -| ++(0.18, 0) |- (hvar_head.west);
 
-% Straight vertical line from Path A into Physics operator
-\draw[arrow=cteal] (roof.south -| mult.north) -- node[pos=0.2, left, font=\tiny\bfseries] {$T_{\text{roof}}$} (mult.north);
-\draw[arrow=cteal] (head_lat.south west) -- (mult.north east);
+% Multiplicative Physics Operator on the left of Path B
+\node[op=cteal, font=\bfseries\normalsize] (mult) at (12.95, 5.55) {$\bigotimes$};
+\node[font=\bfseries\tiny, cteal, anchor=south] at (12.95, 5.9) {$\hat{T} \ge T_{\text{roof}}$};
+% Roofline to mult (clean vertical on left margin)
+\draw[arrow=cteal] (roof.south -| mult.north) -- (mult.north);
+% Latency head to mult (clean horizontal into mult.east)
+\draw[arrow=cteal] (hlat_head.south) |- (mult.east);
 
-% Operational Power Head
-\node[block=cteal, anchor=north] (head_pwr) at (14.4, 6.7) {
-    \parbox{1.7cm}{\centering \textbf{\tiny Power Head}\\\tiny $p_\theta \to \sigma \cdot TDP$}
-};
-
-% Log-Variance Uncertainty Head
-\node[block=cteal, anchor=north] (head_var) at (16.6, 6.7) {
-    \parbox{1.8cm}{\centering \textbf{\tiny Var Head}\\\tiny $s_\theta \implies \hat{\sigma}$}
-};
-
-\draw[arrow=camber] (zfilm.east) -| ++(0.2, 0) |- (head_lat.west);
-\draw[arrow=camber] (zfilm.east) -| ++(0.2, 0) |- (head_pwr.west);
-\draw[arrow=camber] (zfilm.east) -| ++(0.2, 0) |- (head_var.west);
-
-% Multi-Task Predictions Output Card
-\node[card=cgreen, fill=cgreenbg, anchor=north] (preds) at (14.65, 4.6) {
-    \parbox{5.8cm}{
-        \textcolor{cgreen}{\textbf{\scriptsize PICAN Multi-Task Predictions:}}\\[0.2em]
-        \tiny $\bullet$ \textbf{Predicted Latency} ($\ge T_{\text{roof}}$ physically bounded):\\
-        \quad $\hat{T}(x, g) = T_{\text{roof}}(x, g) \cdot \exp(\text{softplus}(r_\theta))$\\[0.2em]
-        \tiny $\bullet$ \textbf{Predicted Power} ($\le TDP(g)$ physically bounded):\\
-        \quad $\hat{P}(x, g) = TDP(g) \cdot \text{sigmoid}(p_\theta)$\\[0.2em]
-        \tiny $\bullet$ \textbf{Aleatoric Uncertainty}: $\hat{\sigma}(x, g) = \exp(s_\theta / 2)$
+% Multi-Task Output Card
+\node[card=cgreen, fill=cgreenbg, anchor=north] (preds) at (15.425, 4.5) {
+    \parbox{5.1cm}{
+        \centering
+        \textcolor{cgreen}{\textbf{\scriptsize Physically-Consistent Predictions}}\\[0.2em]
+        \raggedright
+        \tiny $\bullet$ \textbf{Latency:} $\hat{T}(x, g) = T_{\text{roof}} \cdot \exp(\mathrm{softplus}(r_\theta)) \ge T_{\text{roof}}$\\[0.15em]
+        \tiny $\bullet$ \textbf{Power:} $\hat{P}(x, g) = \mathrm{TDP}(g) \cdot \sigma(p_\theta) \le \mathrm{TDP}(g)$\\[0.15em]
+        \tiny $\bullet$ \textbf{Aleatoric Uncertainty:} $\hat{\sigma}(x, g) = \exp(s_\theta / 2)$
     }
 };
-\draw[arrow=cteal] (mult.south) -- ++(0, -0.4) -| (preds.north -| 12.4, 4.6);
-\draw[arrow=cteal] (head_pwr.south) -- (preds.north -| head_pwr.south);
-\draw[arrow=cteal] (head_var.south) -- (preds.north -| head_var.south);
+\draw[arrow=cteal] (mult.south) |- (preds.north -| mult.south);
+\draw[arrow=cteal] (hpwr_head.south) -- (preds.north -| hpwr_head.south);
+\draw[arrow=cteal] (hvar_head.south) -- (preds.north -| hvar_head.south);
+
+% Physical guarantee badge
+\node[card=cgreen, fill=white, anchor=north] at (15.425, 1.9) {
+    \parbox{4.9cm}{
+        \centering
+        \textcolor{cgreen!90!black}{\textbf{\tiny Inductive Physics Biases Enforced:}}\\
+        \tiny Latency cannot breach memory bus limit $\land$ Power draw $\le$ TDP
+    }
+};
 
 % ==============================================================================
-% 4. CONTAINER 4: RISK CALIBRATION & ADMISSION (X: 18.1 to 25.4, Y: 0.1 to 11.7)
+% 4. CONTAINER 4: RISK CALIBRATION & ADMISSION
 % ==============================================================================
-\draw[container=cpurple] (18.1, 0.1) rectangle (25.4, 11.7);
-\fill[cpurple, rounded corners=3pt] (18.2, 11.05) rectangle (25.3, 11.6);
-\node[text=white, font=\bfseries\scriptsize] at (21.75, 11.32) {4. Conformal Calibration \& Admission};
+\draw[container=cpurple] (18.80, 0.6) rectangle (24.65, 9.85);
+\node[tag=cpurple, anchor=north] at (21.725, 9.75) {(4) Covariate-Shift Conformal Selection};
 
-% Mahalanobis Distance Card
-\node[card=cpurple, anchor=north] (maha) at (21.75, 10.9) {
-    \parbox{6.7cm}{
-        \textcolor{cpurple}{\textbf{\scriptsize Microarchitectural Covariate Shift}}\\[0.2em]
-        \tiny Mahalanobis distance from training accelerator manifold:
-        $$\textstyle d_{\text{shift}}(g) = \sqrt{(g - \mu_{\text{tr}})^T \Sigma_{\text{tr}}^{-1} (g - \mu_{\text{tr}})}$$
+% Covariate Shift Card
+\node[card=cpurple, anchor=north] (maha) at (21.725, 9.15) {
+    \parbox{5.1cm}{
+        \centering
+        \textcolor{cpurple}{\textbf{\scriptsize Microarchitectural Covariate Shift}}\\[0.15em]
+        \tiny Mahalanobis distance from training manifold:
+        $$\textstyle d_{\text{shift}}(g) = \sqrt{(g - \mu_{\text{tr}})^\top \Sigma_{\text{tr}}^{-1} (g - \mu_{\text{tr}})}$$
     }
 };
 
 % Conformal Calibrator Card
-\node[card=cpurple, anchor=north] (conf) at (21.75, 8.95) {
-    \parbox{6.7cm}{
-        \textcolor{cpurple}{\textbf{\scriptsize Group-Conditional Conformal Calibrator}}\\[0.2em]
-        \tiny Non-conformity scores $s_i = |y_i - \hat{y}_i| / \hat{\sigma}_i$ on source split:\\
-        \tiny $\hat{q}_{1-\alpha} = \text{Quantile}_{\lceil (n+1)(1-\alpha) \rceil / n}(\{s_i\})$\\[0.25em]
+\node[card=cpurple, anchor=north] (conf) at (21.725, 7.45) {
+    \parbox{5.1cm}{
+        \centering
+        \textcolor{cpurple}{\textbf{\scriptsize Group Conformal Calibrator}}\\[0.15em]
         \tiny Shift-adjusted quantile:
-        $$\textstyle \hat{q}_{\text{shift}}(g) = \hat{q}_{1-\alpha}\cdot [1 + \gamma_{\text{shift}} \min(d_{\text{shift}}, d_{\max})]$$
-        \textbf{\tiny Empirical Upper SLA Latency Bound:}
+        $$\textstyle \hat{q}_{\text{shift}}(g) = \hat{q}_{1-\alpha} \cdot [1 + \gamma_{\text{shift}} \min(d_{\text{shift}}, d_{\max})]$$\\[-0.5em]
+        \tiny \textbf{Empirical Upper SLA Latency Bound:}
         $$\textstyle \hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)$$
     }
 };
@@ -452,34 +469,31 @@ where $\mathbb{I}(\cdot)$ is the indicator function and $\lambda_{\text{SLA}} \g
 \draw[arrow=cteal] (preds.east) -| ++(0.18, 0) |- (conf.west);
 
 % SLA Admission Selector Card
-\node[card=cgreen, fill=cgreenbg, anchor=north] (sel) at (21.75, 5.2) {
-    \parbox{6.7cm}{
-        \textcolor{cgreen}{\textbf{\scriptsize SLA-Constrained Admission Controller}}\\[0.2em]
-        \tiny \textbf{1. Empirical Feasibility Set:} $\mathcal{G}_{\text{feas}} = \{g \in \mathcal{G} \mid \hat{T}_{\text{upper}}(x, g) \le T_{\max}\}$\\[0.2em]
-        \tiny \textbf{2. Energy-Optimal Recommendation:}\\[0.2em]
+\node[card=cgreen, fill=cgreenbg, anchor=north] (sel) at (21.725, 4.45) {
+    \parbox{5.1cm}{
         \centering
-        \tiny $g^* = \arg\min_{g \in \mathcal{G}_{\text{feas}}} \hat{P}(x, g)$\\[0.3em]
-        \colorbox{cgreen}{\textcolor{white}{\textbf{\tiny\strut Selected GPU $g^*$ (e.g. L4, 72W) $\mid$ 0 Violations (0.0\%)}}}
+        \textcolor{cgreen}{\textbf{\scriptsize SLA Constrained Selection}}\\[0.15em]
+        \tiny Feasibility: $\mathcal{G}_{\text{feas}} = \{g \in \mathcal{G} \mid \hat{T}_{\text{upper}}(x, g) \le T_{\max}\}$\\[0.15em]
+        \small $$g^* = \arg\min_{g \in \mathcal{G}_{\text{feas}}} \hat{P}(x, g)$$\\[-0.4em]
+        \colorbox{cgreen}{\parbox{4.7cm}{\centering\textcolor{white}{\textbf{\tiny\strut Optimal Hardware: $g^*$ $\mid$ Lowest Power \& 0 Violations}}}}
     }
 };
 \draw[arrow=cpurple] (conf) -- (sel);
 
 % ROAA Probing Loop Card
-\node[card=camber, fill=camberbg, anchor=north] (roaa) at (21.75, 2.7) {
-    \parbox{6.7cm}{
-        \textcolor{camber}{\textbf{\scriptsize Regret-Optimal Active Acquisition (ROAA)}}\\[0.2em]
-        \tiny Trigger: If $d_{\text{shift}} > \tau$ \& profiling budget $k \in \{1, 3, 5\} > 0$:\\[0.2em]
+\node[card=camber, fill=camberbg, anchor=north] (roaa) at (21.725, 2.1) {
+    \parbox{5.1cm}{
         \centering
-        \tiny $\alpha_{\text{ROAA}}(x) \propto \hat{\sigma} \exp\left(-\frac{(\hat{T}-T_{\max})^2}{2\hat{\sigma}^2}\right) \frac{\hat{P}}{TDP}$\\[0.2em]
-        \raggedright
-        \tiny Boundary-ambiguity active probes $\to$ update FiLM $[\gamma_k, \beta_k]$
+        \textcolor{camber}{\textbf{\scriptsize Regret-Optimal Active Acquisition}}\\[0.15em]
+        \tiny Active probe selection on candidate $x$ near SLA boundary:
+        $$\textstyle \alpha_{\text{ROAA}}(x) \propto \hat{\sigma} \exp\left(-\frac{(\hat{T}-T_{\max})^2}{2\hat{\sigma}^2}\right) \frac{\hat{P}}{\mathrm{TDP}}$$
     }
 };
 
-% ROAA Feedback arrow to FiLM modulation
-\draw[dasharrow=camber] (roaa.west) -- ++(-0.25, 0) |- (14.65, 0.8) -| (film.south);
-\node[fill=camberbg, draw=camber, rounded corners=2pt, font=\bfseries\tiny, text=camber!90!black, inner sep=2.5pt] 
-    at (14.65, 0.8) {ROAA Few-Shot Probing Feedback: Updates FiLM $[\gamma_k, \beta_k]$};
+% ROAA Feedback arrow to FiLM modulation (clean path along bottom channel and up left margin of Stage 2)
+\draw[dasharrow=camber] (roaa.west) -- ++(-0.25, 0) |- (15.425, 0.25) -- (6.35, 0.25) |- (film.west);
+\node[fill=camberbg, draw=camber, rounded corners=2pt, font=\bfseries\tiny, text=camber!90!black, inner sep=2pt] 
+    at (15.425, 0.25) {ROAA Few-Shot Probing Feedback: Updates FiLM $[\gamma_k, \beta_k]$};
 
 \end{tikzpicture}%
 }
@@ -490,7 +504,7 @@ where $\mathbb{I}(\cdot)$ is the indicator function and $\lambda_{\text{SLA}} \g
 The SHIFT-GPU framework comprises five modular, mathematically coupled components designed to solve Eq.~\eqref{eq:opt_problem}, illustrated in Figure \ref{fig:architecture}.
 
 \subsection{Component A: Deterministic Microarchitectural Roofline Base}
-Rather than treating latency as an unconstrained regression target, we embed the physical limits of GPU execution into the hypothesis space. During the decode phase of autoregressive generation, generating each token requires reading model parameters across the memory bus once, while computing $2 N_{\text{params}}$ floating-point operations.
+Rather than treating latency as an unconstrained regression target, we embed the physical limits of GPU execution into the hypothesis space, directly operationalizing the empirical findings of Desislavov et al. \citep{suscom_desislavov2023} regarding arithmetic intensity and memory-bandwidth saturation. During the decode phase of autoregressive generation, generating each token requires reading model parameters across the memory bus once, while computing $2 N_{\text{params}}$ floating-point operations.
 
 Accounting for sequence parallelism in continuous batching, the effective batch size is denoted as $B(s)$, where $B(\text{server}) = 1.0$ and $B(\text{offline}) = 256.0$ (reflecting the default concurrency saturation cap in modern serving systems such as vLLM). The deterministic microarchitectural Roofline lower bound $T_{\text{roof}}(x, g)$ is defined as:
 \begin{equation}
@@ -905,7 +919,7 @@ Ablating the deterministic microarchitectural Roofline base (Ablation A) causes 
 A common misconception in AI infrastructure is treating instantaneous GPU power draw (Watts) as synonymous with energy consumption (Joules). In autoregressive inference, total energy per request is the time integral of power: $E = \int_0^T P(t) dt \approx P_{\text{mean}} \cdot T_{\text{total}}$. A low-TDP accelerator (e.g., Tesla T4 at 70 W) operating at high latency may consume significantly more total energy than an advanced accelerator (e.g., L40S at 350 W) that finishes the inference burst in a fraction of the time. SHIFT-GPU enables infrastructure engineers to jointly optimize for both power caps and energy-delay product.
 
 \subsection{Integration into Cloud Schedulers (Kubernetes / Slurm)}
-SHIFT-GPU can be seamlessly integrated into existing cloud resource orchestrators as a lightweight admission controller. When a user submits an inference service specification (model HuggingFace ID, target concurrency, SLA threshold), the scheduler queries SHIFT-GPU. If the target GPU family is familiar, SHIFT-GPU returns zero-shot recommendations in under 5 milliseconds. If the cluster introduces unfamiliar accelerators ($d_{\text{shift}} > 3.0$), the scheduler automatically triggers a 3-shot ROAA profiling micro-job before onboarding the workload, reinforcing SLA compliance with negligible overhead.
+SHIFT-GPU can be seamlessly integrated into existing cloud resource orchestrators as a lightweight admission controller, complementing node-level power coordination policies such as PowerCoord \citep{suscom_powercoord2020} and cloud workflow managers \citep{suscom_kumar2022, suscom_malekloo2018}. Furthermore, by explicitly bounding tail latency risk through conformal calibration, SHIFT-GPU guards against the queue instability and latency explosions analytically established by Yao et al. \citep{suscom_tradeoffs2025}. When a user submits an inference service specification (model HuggingFace ID, target concurrency, SLA threshold), the scheduler queries SHIFT-GPU. If the target GPU family is familiar, SHIFT-GPU returns zero-shot recommendations in under 5 milliseconds. If the cluster introduces unfamiliar accelerators ($d_{\text{shift}} > 3.0$), the scheduler automatically triggers a 3-shot ROAA profiling micro-job before onboarding the workload, reinforcing SLA compliance with negligible overhead.
 
 \section{Threats to Validity and Limitations}
 \label{sec:threats}
