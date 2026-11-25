@@ -9,7 +9,7 @@
 Department of Information Technology, Nehru Institute of Technology\\
 Coimbatore, Tamil Nadu, 641105, India\\
 Email: \url{pandiajason@gmail.com}\\[1em]
-\textbf{Date:} November 20, 2026\\
+\textbf{Date:} November 25, 2026\\
 \textbf{Place:} Coimbatore, India\\[1em]
 \textbf{To:}\\
 The Editor-in-Chief and Editorial Board\\
@@ -23,20 +23,18 @@ Dear Editor-in-Chief and Esteemed Members of the Editorial Board,
 
 We are pleased to submit our original research manuscript titled \textbf{``SHIFT-GPU: Shift-Aware, Risk-Calibrated and Physics-Guided Learning for Reliable LLM Inference Hardware Selection''} for consideration as a regular research article in \textit{Sustainable Computing: Informatics and Systems}.
 
-With the massive proliferation of generative artificial intelligence and Large Language Models (LLMs), the carbon footprint, energy consumption, and infrastructure expenditure of continuous autoregressive inference have become central challenges in sustainable computing. To maximize throughput per Watt, modern cloud data centers deploy heterogeneous accelerator clusters comprising diverse GPU architectures across multiple generations (e.g., NVIDIA Hopper, Ada Lovelace, Ampere, Turing, and Volta). However, selecting the optimal GPU for a given LLM and latency Service Level Agreement (SLA) without running exhaustive empirical profiling is an open challenge.
+With the rapid adoption of Large Language Models (LLMs), energy consumption and operational expenditure during continuous autoregressive serving have become central concerns in sustainable computing. Modern cloud clusters mix heterogeneous GPU generations (Volta, Turing, Ampere, Ada Lovelace, and Hopper), yet selecting the power-minimizing accelerator that guarantees Service Level Agreement (SLA) latency compliance on unfamiliar hardware remains challenging without costly empirical grid profiling.
 
-While recent literature (including pioneering articles in \textit{Sustainable Computing: Informatics and Systems} on multi-objective configuration optimization and forecasting-based LLM resource management) has addressed in-domain resource allocation on fixed accelerators, existing predictive models fail dramatically when deployed on previously unseen hardware architectures. Specifically, when an infrastructure operator introduces an unfamiliar accelerator family, standard tree-based or black-box neural predictors suffer severe covariate shift degradation, experiencing a 300\% surge in prediction error and triggering widespread SLA latency violations.
-
-In this work, we propose \textbf{SHIFT-GPU}, a principled computer science framework uniting:
+Building directly upon recent sustainable computing literature published in \textit{Sustainable Computing: Informatics and Systems}, we present \textbf{SHIFT-GPU}, a framework uniting:
 \begin{enumerate}
-    \item \textbf{Physics-Guided Inductive Biases:} We introduce \textbf{PICAN} (\textit{Physics-Informed Cross-Attention Network}), which mathematically couples a deterministic microarchitectural memory-bandwidth roofline lower bound ($T_{\text{roof}} = \max(2 N_{\text{params}} / (B_{\text{mem}} \cdot B(s)), 2 N_{\text{params}} / F_{\text{peak}})$) with a bipartite cross-attention representation space ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) and multiplicative exponential residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))$).
-    \item \textbf{Covariate-Shift Conformal Risk Calibration:} We introduce an empirical conformal calibration scheme scaled by microarchitectural Mahalanobis distance, constructing risk-calibrated latency bounds to manage operational SLA violations under hardware shift.
-    \item \textbf{Regret-Optimal Active Acquisition (ROAA):} We formulate an active few-shot profiling policy that selects informative hardware calibration measurements ($k \in \{1, 3, 5\}$ shots) to directly minimize operational deployment regret near the critical SLA boundary rather than passive statistical variance.
+    \item \textbf{Physics-Guided Neural Residual Ensemble (PICAN):} Couples a deterministic microarchitectural Roofline lower bound ($T_{\text{roof}}$) with decoupled dual workload-hardware encoders, smooth softplus multiplicative residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\mathrm{softplus}(r_\theta))$), and 5-seed heteroscedastic + epistemic variance estimation.
+    \item \textbf{Covariate-Shift Conformal Risk Calibration:} Uses Mahalanobis hardware discrepancy to adjust conformal latency upper bounds, providing an explicit operational hedge against tail latency under-estimation under hardware shift.
+    \item \textbf{Empirical Evaluation of Few-Shot FiLM Calibration:} Benchmarks uniform random, diversity, uncertainty, and SLA-boundary (ROAA) probing strategies for FiLM adaptation on unfamiliar accelerators, providing transparent empirical guidance against na\"ive small-shot updates when zero-shot ensembles already generalize well.
 \end{enumerate}
 
-Extensive empirical evaluations across 4,163 real-world production configurations (encompassing 42 open-source LLMs and 8 server-grade GPU types under an automated zero-leakage blinding protocol) confirm that SHIFT-GPU reduces out-of-distribution inter-token latency error from 12.16\% (matched XGBoost rerun) to 7.02\% MdAPE (a 42.3\% relative error reduction), and quantifies the operational trade-offs between latency risk, admission, and power on the evaluated benchmark.
+Evaluated across 4,163 real-world production telemetry configurations spanning 42 open-source LLMs (0.12B--27B parameters) and 8 NVIDIA GPU models under a NaN-blinded zero-leakage protocol, a 5-seed SHIFT-GPU ensemble reduces Leave-One-GPU-Out (LOGO) inter-token latency error from 11.98\% (matched XGBoost) and 10.68\% (Roofline-augmented XGBoost) down to \textbf{6.83\% MdAPE} (with single-seed mean 7.22\% $\pm$ 0.75\%), achieves \textbf{6.21\% MdAPE} under 42-fold Leave-One-LLM-Out (LOLO) generalization, and eliminates SLA latency violations across all evaluated thresholds ($T_{\max} \in [20, 40]$~ms, 0 / 125 accepted workloads).
 
-This manuscript represents original research that has not been published elsewhere and is not under consideration by any other journal or conference.
+All source code, benchmark tables, and reproduction scripts are publicly available at \url{https://github.com/PandiaJason/SHIFT-GPU}. This manuscript represents original research that has not been published elsewhere and is not under consideration by any other journal or conference.
 
 Thank you very much for your time, effort, and consideration of our work.
 

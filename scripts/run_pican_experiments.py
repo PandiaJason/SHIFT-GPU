@@ -1,4 +1,10 @@
 """
+Legacy Early Prototype Benchmark Script (superseded by scripts/run_strict_leakage_free_experiments.py).
+
+NOTE: All authoritative manuscript tables, 5-seed NLL ensembles, 42-fold LOLO runs,
+NaN-blinded verification checks, and production SLA evaluations in the SHIFT-GPU paper are
+produced exclusively by `scripts/run_strict_leakage_free_experiments.py`.
+
 Comprehensive Benchmark Suite for SHIFT-GPU and PICAN.
 Executes Experiments E1 to E7 with 100% Real Empirical Training & Testing:
 - E1: Baseline Reproduction & Metrics (XGBoost)

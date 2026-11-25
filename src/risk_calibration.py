@@ -9,11 +9,15 @@ import numpy as np
 from scipy.spatial.distance import mahalanobis
 
 class ConformalRiskCalibrator:
-    def __init__(self, alpha=0.10):
+    def __init__(self, alpha=0.10, gamma_shift=0.15, d_max=5.0):
         """
         alpha: Miscoverage rate (e.g., 0.10 for 90% confidence / coverage)
+        gamma_shift: Linear scaling coefficient for Mahalanobis shift discrepancy
+        d_max: Maximum cap applied to Mahalanobis shift distance
         """
         self.alpha = alpha
+        self.gamma_shift = gamma_shift
+        self.d_max = d_max
         self.q_hat = 1.645 # standard normal fallback
         self.mean_train_hw = None
         self.inv_cov_train_hw = None
@@ -54,7 +58,7 @@ class ConformalRiskCalibrator:
         """
         std_test = np.maximum(std_test, 1e-6)
         # Shift penalty expands interval proportionally to out-of-distribution distance
-        shift_multiplier = 1.0 + 0.15 * np.minimum(hw_shift_score, 5.0)
+        shift_multiplier = 1.0 + self.gamma_shift * np.minimum(hw_shift_score, self.d_max)
         effective_q = self.q_hat * shift_multiplier
         
         lower = np.maximum(0.0, pred_test - effective_q * std_test)

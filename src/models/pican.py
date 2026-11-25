@@ -107,13 +107,13 @@ class PICAN(nn.Module):
         log_var = self.uncertainty_head(z).squeeze(-1) # [B]
         
         if self.target == "itl":
-            res = torch.clamp(raw_res, min=0.0) # Physical floor constraint
-            pred = physics_base * torch.exp(res) if physics_base is not None else torch.exp(raw_res)
+            res = F.softplus(raw_res) # Smooth multiplicative physical floor constraint (Eq. 7)
+            pred = physics_base * torch.exp(res) if physics_base is not None else torch.exp(res)
         else:
             res = torch.sigmoid(raw_res)
             pred = physics_base * res if physics_base is not None else res
             
-        return pred, log_var, raw_res
+        return pred, log_var, res
 
     def freeze_backbone_for_few_shot(self):
         """Freezes all representation weights, exposing only the FiLM adapter for few-shot calibration."""

@@ -2,9 +2,9 @@
 % 3 to 5 bullet points, max 85 characters per bullet point
 
 \begin{itemize}
-    \item Reduces unseen GPU latency prediction error from 12.16\% to 7.02\% over tree models.
-    \item PICAN couples roofline physics with cross-attention to constrain latency error.
-    \item Modern accelerators (L4, A30, H200, L40S) achieve 4.3\%--6.7\% zero-shot latency MdAPE.
-    \item Zero-leakage protocol verified: predictions match within numerical tolerance.
-    \item Calibrated policy avoids violations under tight SLAs in offline replay.
+    \item Cuts unseen GPU latency error from 11.98\% to 6.83\% (-43.0\%) over XGBoost.
+    \item Outperforms Roofline-augmented XGBoost (10.68\% to 6.83\%, -36.1\%) across 8 GPUs.
+    \item Achieves 6.21\% LOLO error across 42 LLMs under strict NaN-blinded verification.
+    \item Conformal bounds maintain 0/125 SLA violations across 20--40 ms latency thresholds.
+    \item Reproducible open-source pipeline, 5-seed benchmarks, and tables publicly released.
 \end{itemize}

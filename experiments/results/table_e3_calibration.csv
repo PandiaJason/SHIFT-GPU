@@ -1,0 +1,3 @@
+method,two_sided_cov_pct,upper_cov_pct
+Uncalibrated Gaussian (1.645 sigma),69.54119625270238,82.8489070381936
+Shift-Adjusted Conformal,77.01177035791497,86.78837376891664

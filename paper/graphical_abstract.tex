@@ -1,144 +1,110 @@
-\documentclass[11pt]{article}
-\usepackage[margin=0.4in, landscape]{geometry}
+\documentclass[tikz,border=8pt]{standalone}
 \usepackage{amsmath,amssymb}
-\usepackage{graphicx}
 \usepackage{xcolor}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shadows, fit}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
 
-\newcommand{\head}[2]{\textbf{\color{#1!90!black}#2}}
+\definecolor{cblue}{RGB}{37, 99, 235}
+\definecolor{cteal}{RGB}{13, 148, 136}
+\definecolor{cpurple}{RGB}{109, 40, 217}
+\definecolor{cgreen}{RGB}{22, 163, 74}
+
+\newcommand{\head}[2]{\textbf{\color{#1!85!black}#2}}
 
 \begin{document}
-\thispagestyle{empty}
 
-\begin{center}
-{\Large \textbf{SHIFT-GPU: Shift-Aware, Risk-Calibrated and Physics-Guided Learning for Reliable LLM Hardware Selection}}\\[0.2em]
-{\small Jason Pandian \quad $\cdot$ \quad Department of Information Technology, Nehru Institute of Technology, Coimbatore, India}
-\end{center}
-
-\vspace{0.4em}
-\centering
-\resizebox{0.96\linewidth}{!}{%
 \begin{tikzpicture}[
     auto,
     node distance=0.8cm and 0.9cm,
-    stage/.style={
-        draw=gray!50,
-        fill=gray!3,
-        rounded corners=6pt,
-        inner sep=8pt
-    },
     card/.style={
-        draw=#1!80!black,
-        fill=#1!8,
-        thick,
+        draw=#1!75!black,
+        fill=#1!5,
+        line width=0.8pt,
         rounded corners=4pt,
         align=center,
-        inner sep=6pt,
+        inner sep=7pt,
         font=\small
     },
-    head/.style={
-        font=\bfseries\small,
-        text=#1!90!black
-    },
-    code/.style={
-        font=\footnotesize\ttfamily,
-        text=black!90
-    },
-    math/.style={
-        font=\footnotesize,
-        text=black!95
-    },
     arrow/.style={
-        -{Stealth[length=2.5mm,width=2mm]},
-        thick,
-        line width=1.1pt,
-        draw=black!70
-    },
-    badge/.style={
-        fill=#1!20,
-        draw=#1!80!black,
-        rounded corners=3pt,
-        font=\scriptsize\bfseries,
-        inner sep=3pt,
-        text=#1!90!black
+        -{Stealth[length=2.4mm,width=1.8mm]},
+        line width=1.0pt,
+        draw=slate!80!black
     }
 ]
+\colorlet{slate}{gray}
 
 % ==================== STAGE 1: INPUTS ====================
-\node[card=blue, minimum width=5.6cm, minimum height=5.0cm] (col1) {
-    {\head{blue}{1. Workload \& Cluster Inputs}}\\[0.5em]
+\node[card=cblue, minimum width=5.3cm, minimum height=4.8cm] (col1) at (0, 0) {
+    {\head{cblue}{1. Workload \& Cluster Inputs}}\\[0.5em]
     \begin{tabular}{l}
     \textbf{LLM Workload} $x = (m, s) \in \mathcal{X}$:\\
-    \quad $\bullet$ Parameters $N_{\text{params}}$, Layers $L$, Heads $N_h$\\
-    \quad $\bullet$ Serving Scenario $s \in \{\text{server}, \text{offline}\}$\\[0.5em]
-    \textbf{Candidate GPUs} $g \in \mathcal{G}$ (8 Architectures):\\
-    \quad $\bullet$ Bandwidth $B_{\text{mem}}$, Peak TFLOPS $F_{\text{peak}}$\\
-    \quad $\bullet$ Thermal Design Power $TDP(g)$\\[0.5em]
-    \textbf{Operational SLA Constraint}:\\
-    \quad $\bullet$ Latency Upper Bound: $T \le T_{\max}$\\
-    \quad $\bullet$ Confidence Guarantee: $1 - \alpha \ge 90\%$
+    \quad $\bullet$ 42 Dense LLMs (0.12B--27B Params)\\
+    \quad $\bullet$ Scenarios $s \in \{\text{server}, \text{offline}\}$\\[0.45em]
+    \textbf{Candidate GPUs} $g \in \mathcal{G}$ (8 Models):\\
+    \quad $\bullet$ Bandwidth $B_{\text{mem}}$, Peak $F_{\text{peak}}$, $\mathrm{TDP}$\\
+    \quad $\bullet$ Volta, Turing, Ampere, Ada, Hopper\\[0.45em]
+    \textbf{Operational SLA Goal}:\\
+    \quad $\bullet$ Strict Bounds ($T_{\max} \in [20, 40]$\,ms)\\
+    \quad $\bullet$ Power Minimization under Shift
     \end{tabular}
 };
 
 % ==================== STAGE 2: PICAN CORE ====================
-\node[card=teal, right=0.9cm of col1, minimum width=6.6cm, minimum height=5.0cm] (col2) {
-    {\head{teal}{2. Physics-Guided PICAN Core}}\\[0.5em]
+\node[card=cteal, right=0.9cm of col1, minimum width=6.1cm, minimum height=4.8cm] (col2) {
+    {\head{cteal}{2. Physics-Guided PICAN Core}}\\[0.5em]
     \begin{tabular}{c}
-    \textbf{Deterministic Microarchitectural Floor}\\
-    $T_{\text{roof}} = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}}\right)$\\[0.6em]
-    \textbf{Bipartite Cross-Attention Core}\\
-    $Q = W_q w_x, \quad K = W_k h_g, \quad V = W_v h_g$\\[0.6em]
-    \textbf{Multiplicative Physics Residual}\\
-    $\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta)) \ge T_{\text{roof}}$\\[0.6em]
-    \textbf{Heteroscedastic Aleatoric Variance}\\
-    $\hat{\sigma}^2(x, g) = \exp(s_\theta(x, g))$
+    \textbf{Deterministic Roofline Lower Floor}\\
+    $T_{\text{roof}} = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}}\right)$\\[0.65em]
+    \textbf{Dual-Encoder Bipartite Fusion}\\
+    $w_x = E_W(x), \quad h_g = E_H(g) \in \mathbb{R}^d$\\[0.55em]
+    \textbf{Smooth Multiplicative Residual}\\
+    $\hat{T} = T_{\text{roof}} \cdot \exp(\mathrm{softplus}(r_\theta)) \ge T_{\text{roof}}$\\[0.55em]
+    \textbf{5-Seed Deep Ensemble Uncertainty}\\
+    $\hat{\sigma}_{\text{total}}$ (Aleatoric NLL + Epistemic Var.)
     \end{tabular}
 };
 
-% ==================== STAGE 3: CALIBRATION & ADAPTATION ====================
-\node[card=purple, right=0.9cm of col2, minimum width=6.6cm, minimum height=5.0cm] (col3) {
-    {\head{purple}{3. Shift Calibration \& Active Probing}}\\[0.5em]
+% ==================== STAGE 3: CALIBRATION & SELECTION ====================
+\node[card=cpurple, right=0.9cm of col2, minimum width=5.6cm, minimum height=4.8cm] (col3) {
+    {\head{cpurple}{3. Conformal Risk Control}}\\[0.5em]
     \begin{tabular}{c}
-    \textbf{Microarchitectural Mahalanobis Shift}\\
-    $d_{\text{shift}}(g) = \sqrt{(g - \mu)^T \Sigma^{-1} (g - \mu)}$\\[0.6em]
-    \textbf{Shift-Adjusted Conformal Bound}\\
-    $\hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)$\\[0.6em]
-    \textbf{Regret-Optimal Active Acquisition (ROAA)}\\
-    $\alpha_{\text{ROAA}} \propto \hat{\sigma} \exp\left(-\frac{(\hat{T}-T_{\max})^2}{2\hat{\sigma}^2}\right) \frac{\hat{P}}{TDP}$\\[0.5em]
-    $\bullet$ Rapid Calibration in $k \in \{1, 3\}$ Measurements\\
-    $\bullet$ FiLM Latent Modulation: $z_{\text{adapted}} = \gamma_k \odot z + \beta_k$
+    \textbf{Hardware Covariate Shift}\\
+    $d_{\text{shift}}(g) = \sqrt{(g - \mu_{\text{tr}})^\top \Sigma_{\text{tr}}^{-1} (g - \mu_{\text{tr}})}$\\[0.65em]
+    \textbf{Shift-Adjusted Upper Bound}\\
+    $\hat{T}_{\text{upper}}(x, g) = \hat{T} + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}_{\text{total}}$\\[0.55em]
+    \textbf{SLA Feasibility \& Dispatch}\\
+    $g^* = \arg\min_{g \in \mathcal{G}_{\text{feas}}} \hat{P}(x, g)$\\
+    s.t. $\hat{T}_{\text{upper}}(x, g) \le T_{\max}$\\[0.4em]
+    \scriptsize Zero-Leakage NaN-Blinded Validation
     \end{tabular}
 };
 
-% ==================== STAGE 4: DECISION ENGINE ====================
-\node[card=red, right=0.9cm of col3, minimum width=5.8cm, minimum height=5.0cm] (col4) {
-    {\head{red}{4. Energy-Optimal Selection}}\\[0.5em]
-    \begin{tabular}{c}
-    \textbf{Empirical Feasibility Filter}\\
-    $\mathcal{G}_{\text{feasible}} = \{g \in \mathcal{G} \mid \hat{T}_{\text{upper}}(x, g) \le T_{\max}\}$\\[0.6em]
-    \textbf{Constrained Optimization}\\
-    $g^* = \arg\min_{g \in \mathcal{G}_{\text{feasible}}} \hat{P}(x, g)$\\[0.7em]
-    \textbf{Empirical Results (4,163 Configs)}\\
+% ==================== STAGE 4: KEY RESULTS ====================
+\node[card=cgreen, right=0.9cm of col3, minimum width=5.3cm, minimum height=4.8cm] (col4) {
+    {\head{cgreen}{4. Empirical Results (4,163 Runs)}}\\[0.5em]
     \begin{tabular}{ll}
-    $\bullet$ ITL Error Reduction: & \textbf{42.3\%} (12.16\% $\to$ 7.02\%)\\
-    $\bullet$ SLA Violations: & \textbf{0 / 125 (0.0\% at 35\,ms)}\\
-    $\bullet$ Profiling Overhead: & \textbf{$>$95\% Reduction (ROAA)}
-    \end{tabular}
+    $\bullet$ LOGO ITL MdAPE: & \textbf{6.83\%} vs.\ 11.98\% XGB\\
+    $\bullet$ vs.\ XGB+Roofline: & \textbf{6.83\%} vs.\ 10.68\% (\textbf{$-$36.1\%})\\
+    $\bullet$ LOLO (42 LLMs): & \textbf{6.21\%} vs.\ 7.72\% XGB\\
+    $\bullet$ 5-Seed Single Mean: & \textbf{7.22\% $\pm$ 0.75\%}\\
+    $\bullet$ SLA Violations: & \textbf{0 / 125 (0.0\%)} across\\
+    & all $T_{\max} \in [20, 40]$\,ms\\
+    $\bullet$ Naive Min-TDP Viol.: & 31.2\%--51.2\% (Unfiltered)\\
+    $\bullet$ Upper Cov.\ (Shift): & \textbf{86.8\%} (vs.\ 82.8\% Uncal.)
     \end{tabular}
 };
+
+% Center title cleanly over col1..col4
+\path (col1.north west) -- (col4.north east) coordinate[midway] (topmid);
+\node[align=center, font=\large\bfseries, anchor=south] (title) at ($(topmid)+(0, 1.1)$)
+    {SHIFT-GPU: Shift-Aware, Risk-Calibrated and Physics-Guided LLM Hardware Selection};
+\node[align=center, font=\footnotesize, text=gray!80!black, anchor=south] (sub) at ($(topmid)+(0, 0.5)$)
+    {Jason Pandian $\cdot$ Department of Information Technology, Nehru Institute of Technology $\cdot$ Target Journal: Elsevier SUSCOM};
 
 % ==================== ARROWS ====================
-\draw[arrow] (col1) -- (col2) node[midway, above, font=\scriptsize\bfseries, text=black!75] {$x, g$};
-\draw[arrow] (col2) -- (col3) node[midway, above, font=\scriptsize\bfseries, text=black!75] {$\hat{T}, \hat{\sigma}$};
-\draw[arrow] (col3) -- (col4) node[midway, above, font=\scriptsize\bfseries, text=black!75] {$\hat{T}_{\text{upper}}$};
+\draw[arrow] (col1.east) -- (col2.west) node[midway, above, font=\scriptsize\bfseries] {$x, g$};
+\draw[arrow] (col2.east) -- (col3.west) node[midway, above, font=\scriptsize\bfseries] {$\hat{T}, \hat{\sigma}$};
+\draw[arrow] (col3.east) -- (col4.west) node[midway, above, font=\scriptsize\bfseries] {$g^*$};
 
-\end{tikzpicture}%
-}
-
-\vspace{0.6em}
-\begin{center}
-\footnotesize \textit{Sustainable Computing: Informatics and Systems} (Elsevier) \quad $\bullet$ \quad Research Article \quad $\bullet$ \quad Open Science Reproduction Package
-\end{center}
+\end{tikzpicture}
 
 \end{document}

@@ -1,5 +1,6 @@
 model_variant,MdAPE_ITL,Empirical_Coverage_Pct,SLA_Violation_Pct
-Full Proposed SHIFT-GPU (PICAN + Roofline + Conformal),7.0178598790882925,86.83641604612059,0.0
-Ablation A: Without Physics Roofline (Pure Attention),20.585519773700987,80.13451837617103,1.6
-Ablation B: Without Cross-Attention (Flat MLP),10.573416475703317,77.03579149651694,0.0
-Baseline C: Standard WattGPU (XGBoost),12.158230220967901,81.9841460485227,0.8
+Full Proposed SHIFT-GPU (PICAN + Roofline + Conformal),6.826427785987092,86.78837376891664,0.0
+Ablation A: Without Physics Roofline (Pure Attention),31.699225839786976,90.8719673312515,4.0
+Ablation B: Without Cross-Attention (Flat MLP + Roofline),6.419644197704113,87.43694451116983,0.8
+Baseline C: XGBoost + Roofline,10.68207421209095,83.83377372087438,0.8
+Baseline D: Matched WattGPU (XGBoost),11.97725981060282,84.5303867403315,0.0

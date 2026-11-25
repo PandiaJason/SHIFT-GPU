@@ -54,16 +54,16 @@
             country={India}}
 
 \begin{abstract}
-Selecting optimal hardware accelerators for Large Language Model (LLM) serving in heterogeneous cloud clusters is a critical operational problem in sustainable computing. In production data centers, exhaustive empirical profiling across models, batch sizes, and GPU generations is environmentally and financially prohibitive. While metadata-driven predictors estimate power draw and latency, existing models suffer severe performance degradation when evaluating unseen GPU architectures, causing Service Level Agreement (SLA) violations and excessive energy consumption. To resolve this, we present \textbf{SHIFT-GPU}, a framework uniting physics-guided learning, covariate-shift calibration, and parameter-efficient few-shot adaptation. At its core is \textbf{PICAN} (\textit{Physics-Informed Cross-Attention Network}), which couples a deterministic microarchitectural Roofline latency bound with a structured bipartite latent interaction module ($w_x \in \mathbb{R}^d, h_g \in \mathbb{R}^d$) and multiplicative exponential residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\text{softplus}(r_\theta))$). To address microarchitectural domain shift, SHIFT-GPU incorporates group-conditional conformal prediction adjusted for Mahalanobis hardware discrepancy. Furthermore, we evaluate few-shot calibration ($k \in \{1, 3, 5\}$) via FiLM parameter modulation, where uniform random probing achieves 6.60\% MdAPE at $k=5$. Evaluated under strict Leave-One-GPU-Out cross-validation across 4,163 real-world production configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures, SHIFT-GPU's foremost contribution is reducing unseen-hardware latency prediction error from 12.16\% to 7.02\% MdAPE (a 42.3\% relative error reduction over matched XGBoost), with modern accelerators achieving 4.3\%--6.7\% error. Under production cluster selection with a 35~ms SLA, SHIFT-GPU observed 0 violations out of 125 accepted workloads (0.0\%) compared to 1 / 125 for XGBoost and 2 / 125 for Minimum TDP; under a tighter latency constraint ($T_{\max} = 20$~ms) where uncalibrated point prediction incurs 8 violations among 125 accepted workloads (6.4\%), conformal calibration records zero violations among 123 accepted workloads (abstaining on 2 workloads deemed infeasible) in exchange for a modest power buffer (+1.36~W on average).
+Selecting optimal hardware accelerators for Large Language Model (LLM) serving in heterogeneous cloud clusters is a critical operational problem in sustainable computing. In production data centers, exhaustive empirical profiling across models, batch sizes, and GPU generations is environmentally and financially prohibitive. While metadata-driven predictors estimate power draw and latency, existing models suffer severe performance degradation when evaluating unseen GPU architectures, causing Service Level Agreement (SLA) violations and excessive energy consumption. To resolve this, we present \textbf{SHIFT-GPU}, a framework uniting physics-guided deep residual ensembles, heteroscedastic and epistemic covariate-shift calibration, and constrained admission control. At its core is \textbf{PICAN} (\textit{Physics-Informed Cross-Attention Network}), which couples a deterministic microarchitectural Roofline latency bound with decoupled workload--hardware latent encoders ($w_x, h_g \in \mathbb{R}^d$), smooth multiplicative exponential residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\mathrm{softplus}(r_\theta))$), and Gaussian Negative Log-Likelihood uncertainty estimation across a 5-seed ensemble. To manage microarchitectural domain shift, SHIFT-GPU incorporates shift-adjusted conformal upper bounds scaled by Mahalanobis hardware discrepancy. We also evaluate few-shot FiLM calibration ($k \in \{1, 3, 5\}$) across probing heuristics, finding that uniform random probing ($7.37\%$--$7.38\%$ MdAPE) outperforms boundary-targeted heuristics ($7.93\%$--$8.10\%$) while zero-shot 5-seed ensembles already anchor global generalization. Evaluated under a NaN-blinded zero-leakage protocol across 4,163 production configurations spanning 42 open-source LLMs (0.12B--27B parameters) and 8 NVIDIA GPU architectures, SHIFT-GPU reduces Leave-One-GPU-Out (LOGO) inter-token latency error from 11.98\% (matched XGBoost rerun) and 10.68\% (Roofline-augmented XGBoost) down to \textbf{6.83\% MdAPE} (relative reductions of 43.0\% and 36.1\%, respectively; single-seed mean 7.22\% $\pm$ 0.75\%), achieves 3.31\%--6.55\% error across modern accelerators (L4, H100, L40S, A30, H200), and reaches \textbf{6.21\% MdAPE} under 42-model Leave-One-LLM-Out (LOLO) generalization (vs.\ 7.72\% for XGBoost). Under production cluster selection across all evaluated SLAs ($T_{\max} \in \{20, 25, 30, 35, 40\}$~ms), risk-calibrated SHIFT-GPU records \textbf{0 violations out of 125 accepted workloads (0.0\%, 0 abstentions)}, whereas naive Minimum TDP incurs 31.2\%--51.2\% violations, Roofline-only Minimum TDP incurs 5.6\%--24.8\% violations, and uncalibrated point predictors incur up to 2.4\% violations.
 \end{abstract}
 
 %% Research highlights
 \begin{highlights}
-\item Reduces unseen GPU latency prediction error from 12.16\% to 7.02\% over tree models.
-\item PICAN couples roofline physics with structured bipartite encoding to constrain latency error.
-\item Modern accelerators (L4, A30, H200, L40S) achieve 4.3\%--6.7\% zero-shot latency MdAPE.
-\item Zero-leakage protocol verified: predictions match within numerical tolerance.
-\item Calibrated policy avoids violations under tight SLAs in offline replay.
+\item Cuts unseen GPU latency error from 11.98\% to 6.83\% (-43.0\%) over XGBoost.
+\item Outperforms Roofline-augmented XGBoost (10.68\% to 6.83\%, -36.1\%) across 8 GPUs.
+\item Achieves 6.21\% LOLO error across 42 LLMs under strict NaN-blinded verification.
+\item Conformal bounds maintain 0/125 SLA violations across 20--40 ms latency thresholds.
+\item Reproducible open-source pipeline, 5-seed benchmarks, and tables publicly released.
 \end{highlights}
 
 \begin{keyword}
@@ -85,7 +85,7 @@ In the sustainable computing literature, optimizing data center hardware allocat
 
 Traditionally, answering the hardware selection question requires exhaustive physical profiling: systematically deploying the LLM across every candidate accelerator under varying prompt lengths, concurrency arrival rates, and batch sizes. However, with dozens of active foundation models and hundreds of potential accelerator configurations, empirical profiling incurs massive energy consumption, creates severe scheduling overhead, and delays workload onboarding.
 
-To bypass exhaustive profiling, recent work has explored metadata-based regression models. Notably, WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters and static GPU specifications can predict inference power and latency. However, as demonstrated in our rigorous empirical baseline analysis, existing metadata models suffer from a fundamental failure mode: \textbf{microarchitectural covariate shift on unseen hardware}. When evaluated in-distribution (standard 5-fold cross-validation), tree models achieve an impressive Median Absolute Percentage Error (MdAPE) of 2.84\% for latency and 2.45\% for power. Yet, when evaluated under Leave-One-GPU-Out (LOGO)---simulating the arrival of an unfamiliar hardware architecture---the latency prediction error surges by over 300\% to 12.16\% (and exceeds 20\% on modern architectures such as L4).
+To bypass exhaustive profiling, recent work has explored metadata-based regression models. Notably, WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters and static GPU specifications can predict inference power and latency. However, as demonstrated in our empirical baseline analysis, existing metadata models suffer from a fundamental failure mode: \textbf{microarchitectural covariate shift on unseen hardware}. When evaluated in-distribution (standard 5-fold cross-validation), tree models achieve an impressive Median Absolute Percentage Error (MdAPE) of 2.84\% for latency and 2.45\% for power. Yet, when evaluated under Leave-One-GPU-Out (LOGO)---simulating the arrival of an unfamiliar hardware architecture---the latency prediction error surges by over 300\% to 11.98\% (and exceeds 17\% on modern architectures such as L4 and A30).
 
 In a production scheduling environment, this degradation is severe. Because point-estimate models lack calibrated uncertainty bounds and microarchitectural inductive biases, they frequently recommend under-provisioned GPUs that suffer uncalibrated SLA violations or over-provisioned accelerators that waste substantial energy.
 
@@ -93,11 +93,11 @@ In a production scheduling environment, this degradation is severe. Because poin
 To resolve this fundamental gap, this paper presents \textbf{SHIFT-GPU}, an end-to-end computer science framework for shift-aware, risk-calibrated, and physics-guided hardware selection. The core scientific contributions of this work are:
 
 \begin{enumerate}
-    \item \textbf{PICAN Architecture (Physics-Informed Cross-Attention Network):} We design a novel neural network architecture that integrates a deterministic microarchitectural Roofline latency lower bound ($T_{\text{roof}} = \max\left(\frac{2 N_{\text{params}}}{B_{\text{mem}} \cdot B(s)}, \frac{2 N_{\text{params}}}{F_{\text{peak}}}\right)$) into the hypothesis space. By decoupling the deterministic physical memory-bandwidth streaming floor from the learned representation via multiplicative exponential residuals, PICAN enforces physical consistency across orders of magnitude of latency.
-    \item \textbf{Microarchitectural Bipartite Latent Coupling:} Rather than concatenating tabular vectors into flat multi-layer perceptrons, PICAN projects workload parameters and hardware specifications into distinct latent spaces, using a bipartite interaction architecture ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) with residual connections to fuse workload features and accelerator capabilities. In our ablations, this structured bipartite representation reduces error from 10.57\% (flat concatenated MLP) to 7.02\% (a 33.6\% relative reduction). We explicitly qualify that in pairwise evaluation (single workload and single hardware token), the softmax attention weight is mathematically degenerate ($\mathrm{softmax}=1.0$), so the empirical performance gain reflects the inductive bias of decoupled dual-encoder representation and residual normalization rather than dynamic cross-token attention filtering.
-    \item \textbf{Covariate-Shift Conformal Risk Calibration:} We formalize group-conditional conformal prediction adjusted for microarchitectural Mahalanobis distance in hardware specification space, bounding tail latency risk under hardware distribution shift without heuristic hand-tuning.
-    \item \textbf{Evaluation of Few-Shot Calibration Strategies:} We investigate targeted few-shot hardware calibration ($k \in \{1, 3, 5\}$) via FiLM parameter modulation without retraining backbone weights. We benchmark a boundary-focused acquisition heuristic alongside diversity and uncertainty baselines, observing that uniform random sampling achieves the lowest overall error (6.60\% at $k=5$) while boundary acquisition focuses specifically on decision thresholds.
-    \item \textbf{Comprehensive Zero-Leakage Empirical Validation:} We conduct an exhaustive evaluation across 4,163 benchmark configurations spanning 42 open-source LLMs and 8 server-grade NVIDIA GPU architectures under an automated NaN-blinded zero-leakage protocol where predictions matched within numerical tolerance. Results demonstrate that SHIFT-GPU's foremost strength is superior zero-shot latency prediction: reducing unseen-hardware error from 12.16\% to 7.02\% MdAPE (a 42.3\% relative error reduction over matched XGBoost), while eliminating SLA violations (0 out of 125 accepted workloads) and cutting profiling overhead by over 95\%.
+    \item \textbf{PICAN Architecture (Physics-Informed Cross-Attention Network):} We design a neural architecture that integrates a deterministic microarchitectural Roofline latency lower bound ($T_{\text{roof}} = \max(2 N_{\text{params}}/(B_{\text{mem}} \cdot B(s)),\, 2 N_{\text{params}}/F_{\text{peak}})$) into the hypothesis space. By decoupling the deterministic physical memory-bandwidth streaming floor from learned residual scaling via smooth multiplicative exponential residuals ($\hat{T} = T_{\text{roof}} \cdot \exp(\mathrm{softplus}(r_\theta))$) and Gaussian NLL variance heads across a 5-seed ensemble, PICAN enforces physical consistency across orders of magnitude of latency.
+    \item \textbf{Empirical Analysis of Bipartite vs.\ Flat Neural Roofline Encoding:} We evaluate bipartite dual-encoder coupling ($Q = W_q w_x, K = W_k h_g, V = W_v h_g$) alongside both a flat concatenated MLP + Roofline neural baseline and a Roofline-augmented XGBoost baseline ($\log(T / T_{\text{roof}})$ target). We prove mathematically and confirm empirically that because pairwise evaluation uses singleton hardware tokens ($L_k = 1$), softmax degenerates to $1.0$: both PICAN (6.83\% MdAPE, 0.0\% SLA violations) and concatenated MLP+Roofline (6.42\% MdAPE, 0.8\% SLA violations) fall within single-seed variance ($\pm 0.75\%$), whereas both substantially outperform Roofline-augmented XGBoost (10.68\% MdAPE) and raw XGBoost (11.98\% MdAPE). This isolates smooth neural Roofline-residual modeling as the true driver of cross-GPU generalization over axis-aligned trees.
+    \item \textbf{Covariate-Shift Conformal Risk Calibration:} We formalize shift-adjusted conformal prediction driven by learned heteroscedastic NLL variance plus deep-ensemble epistemic variance, scaled by microarchitectural Mahalanobis distance in hardware specification space, bounding tail latency risk during scheduling.
+    \item \textbf{Transparent Evaluation of Few-Shot FiLM Adaptation:} We benchmark few-shot FiLM parameter calibration ($k \in \{1, 3, 5\}$) without retraining backbone weights across uniform random, K-Means diversity, maximal uncertainty, and SLA-boundary (ROAA) probing strategies. We report the clear empirical finding that when a well-calibrated 5-seed zero-shot ensemble already achieves 6.83\% MdAPE, small-shot gradient updates slightly perturb global MdAPE (7.37\%--8.10\%) while improving linear parity ($r$ from 0.995 to 0.997), with Uniform Random proving most robust.
+    \item \textbf{Comprehensive Zero-Leakage LOGO and LOLO Validation:} We conduct an exhaustive evaluation across 4,163 benchmark configurations spanning 42 open-source LLMs (0.12B--27B parameters) and 8 NVIDIA GPU architectures under an automated NaN-blinded zero-leakage protocol where blinded predictions match identically. Results demonstrate that SHIFT-GPU reduces unseen-GPU error from 11.98\% (matched XGBoost) and 10.68\% (XGBoost + Roofline) down to \textbf{6.83\% MdAPE} (43.0\% and 36.1\% relative reductions), achieves \textbf{6.21\% MdAPE} in 42-model Leave-One-LLM-Out (LOLO) generalization, and eliminates SLA violations (\textbf{0 / 125 accepted workloads}) across all latency bounds $T_{\max} \in [20, 40]$~ms.
 \end{enumerate}
 
 The remainder of this paper is structured as follows. Section \ref{sec:related} reviews related work in sustainable computing. Section \ref{sec:formulation} presents the formal problem formulation. Section \ref{sec:method} details the SHIFT-GPU methodology, PICAN architecture, and software design. Section \ref{sec:experiments} presents the experimental setup, while Section \ref{sec:results} discusses the empirical results (E1--E7). Section \ref{sec:discussion} analyzes cloud systems implications, Section \ref{sec:threats} addresses threats to validity, and Section \ref{sec:conclusion} concludes.
@@ -113,7 +113,7 @@ With the advent of deep learning and Large Language Models, the relationship bet
 The SHIFT-GPU framework presented in this paper directly emerges from and unifies this rich body of research published in \textit{Sustainable Computing: Informatics and Systems}. Specifically, SHIFT-GPU resolves the critical open challenges highlighted by this lineage: (1) we translate the memory-bandwidth bottleneck insights of Desislavov et al. \citep{suscom_desislavov2023} into an inductive neural network architecture by embedding an analytical Roofline memory-streaming floor ($T_{\text{roof}}$); (2) we solve the out-of-domain hardware generalization challenge posed by Casta{\~n}o et al. \citep{suscom_multiobj2026} and Aguirre-Usandizaga et al. \citep{suscom_forecasting2026} through microarchitectural bipartite cross-attention; (3) we address the distribution-shift vulnerability identified by Kumar et al. \citep{suscom_kumar2022} using group-conditional conformal calibration; and (4) we operationalize the queueing power-latency trade-offs of Yao et al. \citep{suscom_tradeoffs2025} and the SLA-compliance paradigm of Malekloo et al. \citep{suscom_malekloo2018} by enforcing calibrated tail-latency bounds to eliminate SLA violations during energy-minimizing hardware selection.
 
 \subsection{LLM Serving Systems and Performance Characterization}
-Autoregressive LLM inference consists of two distinct operational phases: the compute-bound prefill phase (processing prompt tokens in parallel) and the memory-bandwidth-bound decode phase (generating tokens sequentially) \citep{kwon2023vllm}. Modern serving frameworks employ specialized runtime mechanisms to maximize hardware saturation: vLLM \citep{kwon2023vllm} introduces PagedAttention and continuous batching for efficient KV-cache memory management, while DeepSpeed-Inference \citep{aminabadi2022deepspeed} leverages customized transformer execution kernels, multi-GPU tensor slicing, and memory offloading. Despite these software advances, the underlying hardware efficiency is dictated by the classical Roofline model \citep{williams2009roofline}, which defines the operational boundaries between compute-limited and bandwidth-limited execution. WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters and static GPU specifications can predict inference power and latency across unseen GPUs. In our matched rerun under Leave-One-GPU-Out (LOGO) cross-validation, XGBoost achieves 12.16\% median absolute percentage error for inter-token latency. Because standard tree models lack microarchitectural inductive biases and calibrated uncertainty intervals, their point estimates risk triggering uncalibrated SLA violations during deployment.
+Autoregressive LLM inference consists of two distinct operational phases: the compute-bound prefill phase (processing prompt tokens in parallel) and the memory-bandwidth-bound decode phase (generating tokens sequentially) \citep{kwon2023vllm}. Modern serving frameworks employ specialized runtime mechanisms to maximize hardware saturation: vLLM \citep{kwon2023vllm} introduces PagedAttention and continuous batching for efficient KV-cache memory management, while DeepSpeed-Inference \citep{aminabadi2022deepspeed} leverages customized transformer execution kernels, multi-GPU tensor slicing, and memory offloading. Despite these software advances, the underlying hardware efficiency is dictated by the classical Roofline model \citep{williams2009roofline}, which defines the operational boundaries between compute-limited and bandwidth-limited execution. WattGPU \citep{fadel2026wattgpu} demonstrated that tree ensembles (XGBoost) trained on public LLM parameters and static GPU specifications can predict inference power and latency across unseen GPUs. In our matched rerun under Leave-One-GPU-Out (LOGO) cross-validation without hardware/model identifier columns, XGBoost achieves 11.98\% median absolute percentage error for inter-token latency (10.68\% even when trained on Roofline residual targets). Because standard tree models lack smooth microarchitectural interpolation and calibrated uncertainty intervals, their point estimates risk triggering uncalibrated SLA violations during deployment.
 
 \subsection{Conformal Prediction and Covariate Shift}
 Conformal prediction provides a distribution-free framework for constructing valid predictive intervals with finite-sample marginal coverage guarantees under exchangeability \citep{angelopoulos2023conformal}. Standard split conformal prediction assumes that calibration and test data are drawn exchangeably from the same distribution ($P_{\text{cal}} = P_{\text{test}}$). When evaluating an unseen accelerator architecture, exchangeability cannot be assumed because the test GPU represents a distinct hardware population. \citet{tibshirani2019conformal_covariate} established the theoretical foundations of weighted conformal prediction under covariate shift using likelihood-ratio density re-weighting. However, likelihood-ratio density estimation cannot be reliably evaluated across sparse, discrete microarchitectural feature spaces. In SHIFT-GPU, we employ an empirical Mahalanobis distance heuristic to scale interval widths under hardware discrepancy. Because exchangeability does not hold across distinct GPU populations and the Mahalanobis adjustment is an empirical heuristic rather than a formal theoretical guarantee, we treat our calibrated bounds as empirical and report observed coverage on held-out hardware.
@@ -150,7 +150,7 @@ To rigorously quantify the cost of suboptimal hardware selection, we formalize t
 \label{eq:regret}
 \mathcal{R}(g^* \mid x) = \max\left(0, P(x, g^*) - P(x, g_{\text{oracle}})\right) + \lambda_{\text{SLA}} \cdot P(x, g^*) \cdot \mathbb{I}\left(T(x, g^*) > T_{\max}\right)
 \end{equation}
-where $\mathbb{I}(\cdot)$ is the indicator function and $\lambda_{\text{SLA}} \ge 1$ is an asymmetric penalty factor reflecting the commercial penalty of SLA breach.
+where $\mathbb{I}(\cdot)$ is the indicator function and $\lambda_{\text{SLA}} \ge 1$ is an asymmetric penalty factor ($\lambda_{\text{SLA}} = 5.0$ in our benchmarks) reflecting the operational penalty of an SLA breach. If a risk-calibrated policy abstains from admission despite at least one feasible accelerator existing under oracle knowledge ($\mathcal{G}_{\text{feas}}^{\text{oracle}} \neq \emptyset$), a fixed abstention regret penalty of 50.0 is assessed.
 
 \section{The SHIFT-GPU Methodology}
 \label{sec:method}
@@ -195,23 +195,28 @@ To learn the complex non-linear residual dynamics---including kernel scheduling 
     z_{\text{mca}} = \text{Softmax}\left(\frac{Q K^T}{\sqrt{d}}\right) V, \quad z = \text{LayerNorm}(w_x + z_{\text{mca}})
     \end{equation}
 
-    \textit{Mathematical Qualification on Pairwise Attention Dynamics:} We explicitly qualify the operational mechanics of Eq.~\eqref{eq:mult_residual} under pairwise evaluation. In standard pairwise inference, each forward pass evaluates a single workload specification $x$ against a single candidate accelerator $g$ ($L_q = 1, L_k = 1$). For a scalar dot-product with key length unity, the softmax normalization evaluates identically to $\mathrm{Softmax}([s]) = 1.0$ for any real scalar $s = Q K^\top / \sqrt{d}$. Consequently, $z_{\text{mca}} = V = W_v h_g$, and gradients to $W_q$ and $W_k$ through the softmax function are zero during pairwise training. Under this pairwise regime, the MCA block functions as a structured bipartite projection and residual fusion layer ($z = \text{LayerNorm}(w_x + W_o W_v h_g)$). As demonstrated in Ablation B (Section \ref{sec:results}), the 33.6\% relative error reduction over a flat MLP (7.02\% vs.\ 10.57\% MdAPE) is driven by the decoupled dual-encoder representation, residual skip connection, and layer normalization, rather than dynamic data-dependent attention re-weighting across multiple hardware tokens. If extended to a list-wise ranking setting where a workload query attends over a sequence of $N$ candidate accelerators ($L_k = |\mathcal{G}| > 1$), the attention mechanism would induce genuine workload-dependent candidate selection weights.
-    \item \textbf{Multiplicative Physics-Residual Head:} Rather than unconstrained additive correction, the latency prediction is formulated as an exponential multiplicative scaling over the deterministic Roofline floor:
+    \textit{Mathematical Qualification on Pairwise Attention Dynamics:} We explicitly qualify the operational mechanics of Eq.~(6)--(7) under pairwise evaluation. In pairwise training and inference, each forward pass evaluates a single workload specification $x$ against a single candidate accelerator $g$ ($L_q = 1, L_k = 1$). For a scalar dot-product with key length unity, the softmax normalization evaluates identically to $\mathrm{Softmax}([s]) = 1.0$ for any real scalar $s = Q K^\top / \sqrt{d}$. Consequently, $z_{\text{mca}} = V = W_v h_g$, and gradients to $W_q$ and $K = W_k h_g$ through the softmax function vanish under single-pair inputs. Under this regime, the MCA block operates as a decoupled projection and residual fusion layer ($z = \text{LayerNorm}(w_x + W_o W_v h_g)$). As confirmed empirically in Ablation B (Section \ref{sec:results}), when both models share the same smooth Roofline objective and 5-seed NLL training, concatenated MLP+Roofline achieves 6.42\% MdAPE (0.8\% SLA violations) compared to dual-encoder PICAN's 6.83\% MdAPE (0.0\% SLA violations, within single-seed variance $\pm 0.75\%$). Thus, the cross-GPU performance gain over XGBoost (11.98\%) and Roofline-augmented XGBoost (10.68\%) stems primarily from smooth neural residual interpolation over the deterministic Roofline floor rather than dynamic attention weighting. Extending PICAN to joint multi-GPU list-wise encoding ($L_k = |\mathcal{G}| > 1$) represents a natural path to unlock true workload-dependent attention weights.
+    \item \textbf{Smooth Multiplicative Physics-Residual Head:} Rather than unconstrained additive correction, latency prediction is formulated as an exponential multiplicative scaling over the deterministic Roofline floor:
     \begin{equation}
     \label{eq:mult_residual}
-    \hat{T}(x, g) = T_{\text{roof}}(x, g) \cdot \exp\left(\text{softplus}(r_\theta(z))\right)
+    \hat{T}(x, g) = T_{\text{roof}}(x, g) \cdot \exp\left(\mathrm{softplus}(r_\theta(z))\right)
     \end{equation}
-    where $r_\theta(z) \in \mathbb{R}$ represents the learned non-dimensional residual overhead. Because $\exp(\text{softplus}(r_\theta)) \ge 1.0$, Eq.~\eqref{eq:mult_residual} guarantees that $\hat{T}(x, g)$ is strictly positive, scale-invariant across milliseconds to seconds, and physically bounded from below by the theoretical memory wall ($T \ge T_{\text{roof}}$).
+    where $r_\theta(z) \in \mathbb{R}$ represents the learned non-dimensional residual overhead logit. Because $\mathrm{softplus}(r_\theta) = \log(1 + e^{r_\theta}) > 0$ is smooth and strictly positive, Eq.~\eqref{eq:mult_residual} preserves non-vanishing gradients and guarantees $\hat{T}(x, g) > T_{\text{roof}}(x, g)$.
     
     Similarly, for operational power draw, predictions are bounded within the physical TDP envelope:
     \begin{equation}
     \hat{P}(x, g) = TDP(g) \cdot \sigma\left(p_\theta(z)\right)
     \end{equation}
     where $\sigma(\cdot)$ denotes the sigmoid function, guaranteeing $\hat{P} \in (0, TDP(g))$.
-    \item \textbf{Heteroscedastic Aleatoric Uncertainty Output:} Alongside point estimates, PICAN outputs predicted log-variance $s_\theta(z) = \log \sigma^2(x, g)$ trained via Gaussian Negative Log-Likelihood (NLL) with scale-invariant relative error regularization:
+    \item \textbf{Heteroscedastic NLL + Deep-Ensemble Predictive Uncertainty:} Alongside point estimates, PICAN outputs log-variance $s_\theta(z) \in [-6, 4]$ trained jointly with Smooth L1 residual regression and Gaussian Negative Log-Likelihood (NLL) across $M=5$ independent random seeds ($\{42, 123, 456, 789, 2026\}$) using cosine learning-rate annealing (150 epochs):
     \begin{equation}
-    \mathcal{L}_{\text{total}} = \frac{1}{2} \exp(-s_\theta) (y - \hat{y})^2 + \frac{1}{2} s_\theta + \beta \frac{|y - \hat{y}|}{y}
+    \mathcal{L}_{\text{ITL}} = \mathrm{SmoothL1}_{\beta=0.05}\!\left(\tilde{r}_\theta, r_{\text{true}}\right) + \frac{1}{10}\,\mathbb{E}\!\left[\frac{1}{2} e^{-s_\theta} (r_{\text{true}} - \tilde{r}_\theta)^2 + \frac{1}{2} s_\theta\right]
     \end{equation}
+    where $\tilde{r}_\theta = \mathrm{softplus}(r_\theta)$ and $r_{\text{true}} = \log(T / T_{\text{roof}})$. For ensemble inference across the $M$ seeds, the aggregate latency prediction and total uncertainty combine aleatoric variance and inter-seed epistemic disagreement in linear latency space:
+    \begin{align}
+    \hat{T}(x, g) &= T_{\text{roof}}(x, g)\cdot \exp\!\left(\frac{1}{M}\sum_{m=1}^M \tilde{r}_\theta^{(m)}\right), \\
+    \hat{\sigma}_{\text{total}}(x, g) &= \hat{T}(x, g)\sqrt{\frac{1}{M}\sum_{m=1}^M e^{s_\theta^{(m)}} + \mathrm{Var}_m\!\left(\tilde{r}_\theta^{(m)}\right)}
+    \end{align}
 \end{enumerate}
 
 \subsection{Component C: Microarchitectural Covariate Shift Quantification}
@@ -223,37 +228,37 @@ d_{\text{shift}}(g_{\text{target}}, \mathcal{D}_{\text{train}}) = \sqrt{(g_{\tex
 where $\mu_{\text{train}}$ and $\Sigma_{\text{train}}$ denote the empirical mean and regularized covariance of training hardware specifications.
 
 \subsection{Component D: Group-Calibrated Conformal Risk Calibration}
-To construct an empirical $(1-\alpha)$ safety bound under hardware shift, we employ a shift-adjusted conformal calibration framework. On an in-distribution calibration split, non-conformity scores are computed as normalized residuals $s_i = \frac{|y_i - \hat{y}_i|}{\hat{\sigma}_i}$. The base conformal quantile $\hat{q}_{1-\alpha}$ is derived as:
+To construct an empirical $(1-\alpha)$ safety bound under hardware shift, we employ a shift-adjusted conformal calibration framework. On an in-distribution calibration split, non-conformity scores are computed using total ensemble predictive uncertainty ($\hat{\sigma}_i = \hat{\sigma}_{\text{total}}(x_i, g_i)$) as normalized residuals $s_i = \frac{|y_i - \hat{T}_i|}{\hat{\sigma}_i}$. The base conformal quantile $\hat{q}_{1-\alpha}$ ($\alpha = 0.10$) is derived as:
 \begin{equation}
 \hat{q}_{1-\alpha} = \text{Quantile}_{\frac{\lceil (n+1)(1-\alpha) \rceil}{n}}\left(\{s_i\}_{i=1}^n\right)
 \end{equation}
 
-Under microarchitectural covariate shift, the effective calibration quantile is scaled proportionally to the hardware discrepancy score:
+Under microarchitectural covariate shift, the effective calibration quantile is scaled proportionally to the clipped hardware discrepancy score ($\gamma_{\text{shift}} = 0.15, d_{\max} = 5.0$):
 \begin{equation}
 \hat{q}_{\text{shift}}(g) = \hat{q}_{1-\alpha} \cdot \left(1 + \gamma_{\text{shift}} \cdot \min\left(d_{\text{shift}}(g, \mathcal{D}_{\text{train}}), d_{\max}\right)\right)
 \end{equation}
 
 The empirical upper latency bound used for SLA verification in Eq.~\eqref{eq:opt_problem} is then formulated as:
 \begin{equation}
-\hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}(x, g)
+\hat{T}_{\text{upper}}(x, g) = \hat{T}(x, g) + \hat{q}_{\text{shift}}(g) \cdot \hat{\sigma}_{\text{total}}(x, g)
 \end{equation}
 
 \subsection{Component E: Active Few-Shot Calibration and Boundary Acquisition Heuristic}
-When introducing an unfamiliar GPU architecture, rather than conducting exhaustive profiling or relying purely on zero-shot inference, SHIFT-GPU supports active few-shot calibration within a minimal measurement budget $k \in \{1, 3, 5\}$.
+When introducing an unfamiliar GPU architecture, SHIFT-GPU supports optional active few-shot calibration within a minimal measurement budget $k \in \{1, 3, 5\}$.
 
 Traditional active learning policies select samples maximizing predictive variance ($\arg\max \sigma^2(x)$). In systems infrastructure, variance on workloads that are far from the feasibility threshold ($T \ll T_{\max}$ or $T \gg T_{\max}$) may provide limited boundary discrimination. To explore threshold sensitivity, we formulate a boundary-focused acquisition heuristic, denoted \textbf{ROAA} (\textit{Regret-Oriented Active Acquisition}):
 \begin{equation}
 \label{eq:roaa}
-\alpha_{\text{ROAA}}(x) = \hat{\sigma}(x, g) \cdot \exp\left( - \frac{(\hat{T}(x, g) - T_{\max})^2}{2 \hat{\sigma}^2(x, g)} \right) \cdot \left(\frac{\hat{P}(x, g)}{TDP(g)}\right)
+\alpha_{\text{ROAA}}(x) = \hat{\sigma}_{\text{total}}(x, g) \cdot \exp\left( - \frac{(\hat{T}(x, g) - T_{\max})^2}{2 \hat{\sigma}_{\text{total}}^2(x, g)} \right) \cdot \left(\frac{\hat{P}(x, g)}{TDP(g)}\right)
 \end{equation}
 
-The first term reflects model uncertainty, the second term evaluates Gaussian proximity to the critical SLA decision boundary $T_{\max}$, and the third term incorporates potential energy impact. We emphasize that Eq.~\eqref{eq:roaa} is an empirical heuristic designed to sample boundary edge cases rather than a provably optimal policy; its objective is to explore boundary configurations rather than minimize global regression error across all workloads. 
+The first term reflects total uncertainty, the second term evaluates Gaussian proximity to the critical SLA decision boundary $T_{\max}$, and the third term incorporates normalized power impact. We emphasize that Eq.~\eqref{eq:roaa} is an empirical heuristic designed to sample boundary edge cases rather than a provably optimal policy; its objective is to explore boundary configurations rather than minimize global regression error across all workloads. 
 
-Given $k$ probed measurements, PICAN adapts its representation via Feature-wise Linear Modulation (FiLM) \citep{perez2018film} applied to the latent space:
+Given $k$ probed measurements, PICAN adapts each ensemble member's representation via Feature-wise Linear Modulation (FiLM) \citep{perez2018film} applied to the latent space:
 \begin{equation}
 z_{\text{adapted}} = \gamma_k \odot z + \beta_k
 \end{equation}
-where modulation vectors $\gamma_k, \beta_k \in \mathbb{R}^d$ are calibrated without modifying the underlying physics-guided backbone weights, preventing catastrophic forgetting. Algorithm \ref{alg:shift_gpu} details the complete operational procedure.
+where modulation vectors $\gamma_k, \beta_k \in \mathbb{R}^d$ are optimized for 35 Adam steps with a ridge anchor toward identity ($10^{-2}(\|\gamma_k - \mathbf{1}\|^2 + \|\beta_k\|^2)$) without modifying the underlying physics-guided backbone weights. Algorithm \ref{alg:shift_gpu} details the complete operational procedure.
 
 \begin{algorithm}[t]
 \caption{SHIFT-GPU Admission Control, Conformal Risk Calibration, and Active Adaptation}
@@ -338,141 +343,161 @@ Models are evaluated across three dimensions:
 \section{Experimental Results and Analysis}
 \label{sec:results}
 
-\subsection{E1 \& E2: Unseen Hardware Generalization Benchmark (LOGO)}
-Table \ref{tab:logo_results} reports the performance of SHIFT-GPU (PICAN) against our matched XGBoost baseline rerun \citep{fadel2026wattgpu} and pure physical Roofline across all 8 held-out GPU architectures under LOGO cross-validation.
+\subsection{E1 \& E2: Unseen Hardware (LOGO) and Unseen Model (LOLO) Generalization}
+Table \ref{tab:logo_results} reports the performance of the 5-seed SHIFT-GPU (PICAN) ensemble against our matched XGBoost baseline rerun \citep{fadel2026wattgpu}, a Roofline-augmented XGBoost baseline predicting $\log(T / T_{\text{roof}})$, and pure physical bounds across all 8 held-out GPU architectures under LOGO cross-validation. Table \ref{tab:lolo_results} reports 42-fold Leave-One-LLM-Out (LOLO) generalization across unseen foundation models.
 
 \begin{table}[h]
 \centering
-\caption{Zero-shot performance comparison on unseen hardware architectures under the Leave-One-GPU-Out (LOGO) protocol. Baseline results report our matched XGBoost rerun \citep{fadel2026wattgpu} fitted on identical training folds. Lower MdAPE indicates superior prediction accuracy; higher $\tau$ indicates superior hardware ranking.}
+\caption{Zero-shot performance comparison on unseen hardware architectures under the Leave-One-GPU-Out (LOGO) protocol across 4,163 configurations. SHIFT-GPU reports 5-seed ensemble accuracy alongside single-seed mean $\pm$ std across $\{42, 123, 456, 789, 2026\}$. Lower MdAPE indicates superior accuracy; higher $r$ and $\tau$ indicate superior correlation and ranking.}
 \label{tab:logo_results}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{llrrrr}
 \toprule
 \textbf{Target Metric} & \textbf{Model Architecture} & \textbf{MdAPE (\%)} & \textbf{Pearson $r$} & \textbf{GPU $\tau$} & \textbf{LLM $\tau$} \\
 \midrule
-\multirow{3}{*}{\textbf{Inter-Token Latency (ITL)}} 
-& Non-Learning Roofline \citep{fadel2026wattgpu} & 46.20 & 0.812 & 0.72 & 0.84 \\
-& Matched XGBoost Rerun \citep{fadel2026wattgpu} & 12.16 & 0.975 & 0.80 & 0.81 \\
-& \textbf{SHIFT-GPU (PICAN Zero-Shot)} & \textbf{7.02} & \textbf{0.995} & \textbf{0.86} & \textbf{0.94} \\
+\multirow{4}{*}{\textbf{Inter-Token Latency (ITL)}} 
+& Non-Learning Roofline \citep{williams2009roofline} & 38.10 & 0.992 & \textbf{0.822} & 0.908 \\
+& Matched XGBoost Rerun \citep{fadel2026wattgpu} & 11.98 & 0.983 & 0.676 & 0.922 \\
+& XGBoost + Roofline Baseline & 10.68 & 0.992 & 0.687 & 0.933 \\
+& \textbf{SHIFT-GPU (5-Seed PICAN Ensemble)} & \textbf{6.83} (7.22$\pm$0.75) & \textbf{0.995} & 0.757 & \textbf{0.943} \\
 \midrule
 \multirow{3}{*}{\textbf{Mean Power Draw (W)}} 
-& Non-Learning TDP Baseline \citep{fadel2026wattgpu} & 22.10 & 0.845 & 0.65 & 0.68 \\
-& Matched XGBoost Rerun \citep{fadel2026wattgpu} & 10.26 & 0.968 & 0.80 & 0.81 \\
-& \textbf{SHIFT-GPU (PICAN Zero-Shot)} & \textbf{14.55} & \textbf{0.971} & \textbf{0.82} & \textbf{0.82} \\
+& Non-Learning TDP Duty Base & 27.35 & 0.834 & 0.616 & 0.768 \\
+& \textbf{Matched XGBoost Rerun} \citep{fadel2026wattgpu} & \textbf{12.52} & 0.973 & 0.681 & \textbf{0.812} \\
+& SHIFT-GPU (5-Seed PICAN Ensemble) & 13.44 (14.00$\pm$1.56) & \textbf{0.978} & \textbf{0.707} & \textbf{0.812} \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
-
-As shown in Table \ref{tab:logo_results}, PICAN reduces ITL prediction error on unseen hardware from 12.16\% (matched XGBoost rerun) to 7.02\% (a 42.3\% relative error reduction) while improving Pearson $r$ from 0.975 to 0.995 and LLM ranking Kendall $\tau$ from 0.81 to 0.94. For power draw prediction, PICAN achieves 14.55\% MdAPE across all hardware families (outperforming the non-learning TDP baseline of 22.10\% and reaching under 8\% on modern architectures such as L4 and T4), maintaining strong linear correlation ($r = 0.971$) and ranking fidelity ($\tau = 0.82$). By enforcing the microarchitectural Roofline bound as an inductive physical floor and utilizing bipartite cross-attention, PICAN prevents non-physical extrapolations on out-of-distribution accelerators. 
 
 \begin{table}[h]
 \centering
-\caption{Per-GPU zero-shot Inter-Token Latency prediction error across all 8 held-out GPU architectures under LOGO cross-validation, compared against our matched XGBoost rerun \citep{fadel2026wattgpu}.}
-\label{tab:per_gpu_results}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{llrrrrr}
+\caption{Cross-model Leave-One-LLM-Out (LOLO) ITL generalization across 42 held-out LLMs.}
+\label{tab:lolo_results}
+\resizebox{0.82\linewidth}{!}{%
+\begin{tabular}{lrrrr}
 \toprule
-\textbf{Held-Out GPU} & \textbf{Architecture} & \textbf{Shift $d_{\text{shift}}$} & \textbf{XGBoost MdAPE (\%)} & \textbf{SHIFT-GPU MdAPE (\%)} & \textbf{Rel. Error Red. (\%)} & \textbf{Empirical Cov. (\%)} \\
+\textbf{Model Architecture} & \textbf{MdAPE (\%)} & \textbf{Pearson $r$} & \textbf{GPU $\tau$} & \textbf{LLM $\tau$} \\
 \midrule
-A100 SXM4 40 GB & Ampere & 1.42 & 7.56 & 7.36 & +2.6 & 75.7 \\
-A30 PCIe & Ampere & 3.41 & 15.86 & 5.24 & +67.0 & 87.9 \\
-H100 NVL 94 GB & Hopper & 6.25 & 8.77 & 6.64 & +24.3 & 62.8 \\
-H200 NVL & Hopper & 17.03 & 16.51 & 5.23 & +68.3 & 67.0 \\
-L4 & Ada Lovelace & 4.95 & 20.92 & 4.34 & +79.3 & 82.6 \\
-L40S & Ada Lovelace & 10.61 & 12.13 & 6.66 & +45.1 & 87.8 \\
-Tesla T4 & Turing & 2.55 & 14.30 & 12.35 & +13.6 & 71.2 \\
-Tesla V100 SXM2 & Volta & 4.30 & 12.80 & 11.01 & +14.0 & 78.9 \\
-\midrule
-\textbf{Overall Population} & \textbf{All 8 GPUs} & \textbf{5.06} & \textbf{12.16} & \textbf{7.02} & \textbf{+42.3} & \textbf{75.4 (86.8$^*$)} \\
+Matched XGBoost Rerun \citep{fadel2026wattgpu} & 7.72 & 0.992 & 0.874 & 0.903 \\
+XGBoost + Roofline Baseline & 6.72 & \textbf{0.996} & 0.881 & 0.906 \\
+\textbf{SHIFT-GPU (PICAN)} & \textbf{6.21} & 0.995 & \textbf{0.885} & \textbf{0.917} \\
 \bottomrule
-\multicolumn{7}{l}{\footnotesize $^*$86.8\% represents the empirical upper-bound coverage across all held-out GPUs used during scheduling.}
 \end{tabular}%
 }
 \end{table}
 
-The disaggregated breakdown in Table \ref{tab:per_gpu_results} reveals that SHIFT-GPU's predictive advantage is most pronounced on modern cloud accelerators: achieving 4.34\% MdAPE on L4 (vs. 20.92\% for XGBoost, a 79.3\% error reduction), 5.23\% on H200 NVL (vs. 16.51\%, a 68.3\% reduction), and 5.24\% on A30 PCIe (vs. 15.86\%, a 67.0\% reduction). Figure \ref{fig:temporal_dynamics}(a) illustrates the parity alignment across all 4,163 empirical configurations, while Figure \ref{fig:temporal_dynamics}(b) plots the empirical cumulative error distribution.
+As shown in Table \ref{tab:logo_results}, PICAN reduces unseen-GPU ITL prediction error from 11.98\% (matched XGBoost rerun) and 10.68\% (Roofline-augmented XGBoost) down to \textbf{6.83\%} (a 43.0\% relative error reduction against WattGPU XGBoost and 36.1\% against XGBoost + Roofline), with consistent single-seed stability ($7.22\% \pm 0.75\%$ across 5 seeds) and top LLM ranking fidelity ($\tau = 0.943$). On unseen model architectures (42-fold LOLO, Table \ref{tab:lolo_results}), PICAN similarly reduces ITL error to \textbf{6.21\%} vs.\ 7.72\% for XGBoost ($-$19.5\%) and 6.72\% for XGBoost + Roofline ($-$7.6\%). For power draw under LOGO, PICAN achieves 13.44\% MdAPE (vs.\ 27.35\% duty-cycle baseline and 12.52\% for normalized-power XGBoost), attaining higher linear correlation ($r = 0.978$) and cross-GPU rank ordering ($\tau = 0.707$ vs.\ 0.681) while XGBoost edges out on median percentage error because static TDP bounds lack an exact dynamic utilization floor analogous to Roofline for ITL.
+
+\begin{table}[h]
+\centering
+\caption{Per-GPU zero-shot Inter-Token Latency prediction error across all 8 held-out GPU architectures under LOGO cross-validation, comparing Matched XGBoost, XGBoost + Roofline, and 5-seed SHIFT-GPU (PICAN).}
+\label{tab:per_gpu_results}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llrrrrrrr}
+\toprule
+\textbf{Held-Out GPU} & \textbf{Arch.} & \textbf{Shift $d_{\text{shift}}$} & \textbf{XGBoost} & \textbf{XGB+Roof} & \textbf{SHIFT-GPU} & \textbf{Red.\ vs.\ XGB} & \textbf{2-Sided Cov.} & \textbf{Upper Cov.} \\
+\midrule
+A100 SXM4 40 GB & Ampere & 1.42 & \textbf{8.95\%} & 12.27\% & 11.87\% & $-$32.6\% & 62.8\% & 100.0\% \\
+A30 PCIe & Ampere & 3.41 & 17.15\% & 5.33\% & \textbf{5.03\%} & +70.7\% & 82.9\% & 82.9\% \\
+H100 NVL 94 GB & Hopper & 6.25 & 8.36\% & 7.18\% & \textbf{4.49\%} & +46.2\% & 65.4\% & 65.6\% \\
+H200 NVL & Hopper & 17.03 & 16.73\% & 7.08\% & \textbf{6.55\%} & +60.9\% & 75.0\% & 100.0\% \\
+L4 & Ada & 4.95 & 17.39\% & 15.98\% & \textbf{3.31\%} & +81.0\% & 99.1\% & 100.0\% \\
+L40S & Ada & 10.61 & 10.21\% & 7.20\% & \textbf{4.50\%} & +55.9\% & 98.5\% & 98.7\% \\
+Tesla T4 & Turing & 2.55 & 13.65\% & \textbf{11.18\%} & 13.42\% & +1.7\% & 73.2\% & 95.1\% \\
+Tesla V100 SXM2 & Volta & 4.30 & 11.74\% & 16.89\% & \textbf{10.21\%} & +13.0\% & 68.8\% & 68.8\% \\
+\midrule
+\textbf{Overall Population} & \textbf{8 GPUs} & \textbf{4.95$^\dagger$} & \textbf{11.98\%} & \textbf{10.68\%} & \textbf{6.83\%} & \textbf{+43.0\%} & \textbf{77.0\%} & \textbf{86.8\%} \\
+\bottomrule
+\multicolumn{9}{l}{\footnotesize $^\dagger$Median shift distance across all 4,163 evaluation samples (GPU-level mean: 6.32). Rightmost columns report conformal coverage.}
+\end{tabular}%
+}
+\end{table}
+
+The disaggregated breakdown in Table \ref{tab:per_gpu_results} shows that SHIFT-GPU improves upon Roofline-augmented XGBoost on 7 of 8 GPUs and achieves low zero-shot error on modern data center GPUs: \textbf{3.31\%} on L4 (vs.\ 17.39\% XGBoost, 15.98\% XGB+Roofline), \textbf{4.49\%} on H100 NVL, \textbf{4.50\%} on L40S, \textbf{5.03\%} on A30 PCIe, and \textbf{6.55\%} on H200 NVL ($d_{\text{shift}} = 17.03$). Figure \ref{fig:temporal_dynamics}(a) illustrates parity across all 4,163 configurations, while Figure \ref{fig:temporal_dynamics}(b) shows the empirical cumulative error distributions.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig2_temporal_dynamics_panel.png}
-\caption{Zero-shot prediction calibration and error distributions across 4,163 empirical configurations. (a) Parity plot comparing measured vs. predicted Inter-Token Latency ($T_{\mathrm{meas}}$ vs. $\hat{T}$) on a log--log scale for SHIFT-GPU ($r = 0.995$) and baseline XGBoost ($r = 0.975$). (b) Empirical Cumulative Distribution Function (CDF) of relative prediction error, showing SHIFT-GPU achieving an MdAPE of 7.02\% compared to 12.16\% for WattGPU XGBoost and 46.2\% for non-learning Roofline.}
+\caption{Zero-shot prediction calibration and error distributions across 4,163 empirical configurations. (a) Parity plot comparing measured vs.\ predicted Inter-Token Latency ($T_{\mathrm{meas}}$ vs.\ $\hat{T}$) on a log--log scale for SHIFT-GPU ($r = 0.995$, MdAPE = 6.83\%) and Matched XGBoost ($r = 0.983$, MdAPE = 11.98\%). (b) Empirical Cumulative Distribution Function (CDF) of relative prediction error comparing SHIFT-GPU (6.83\%), XGBoost + Roofline (10.68\%), Matched XGBoost (11.98\%), and Non-Learning Roofline (38.10\%).}
 \label{fig:temporal_dynamics}
 \end{figure*}
 
 \subsection{E3 \& E4: Microarchitectural Covariate Shift and Conformal Calibration}
-We evaluate prediction interval validity under hardware covariate shift. When evaluated on held-out GPUs under strict LOGO cross-validation, uncalibrated Gaussian prediction intervals achieve an empirical coverage of only \textbf{71.4\%} against a nominal 90\% confidence level, confirming that hardware domain shift induces severe miscoverage.
+We evaluate prediction interval validity under hardware covariate shift. Under strict LOGO cross-validation, uncalibrated Gaussian intervals formed from our trained heteroscedastic + ensemble standard deviation ($\hat{T} \pm 1.645\,\hat{\sigma}_{\text{total}}$) attain empirical coverage of \textbf{69.5\%} two-sided (\textbf{82.8\%} upper-bound) against the nominal 90\% target, confirming that hardware domain shift causes under-coverage.
 
-In contrast, our shift-adjusted conformal calibrator dynamically expands interval widths proportionally to the microarchitectural Mahalanobis distance $d_{\text{shift}}$ (Eq.~\eqref{eq:mahalanobis}), elevating empirical upper-bound coverage to \textbf{86.8\%} across unseen test GPUs (and 75.4\% pointwise two-sided coverage across test targets). Although this significantly mitigates under-coverage, empirical coverage remains below the nominal 90.0\% level due to microarchitectural domain shift (e.g., $d_{\text{shift}} = 17.03$ on H200 NVL), which violates strict calibration exchangeability. Figure \ref{fig:accuracy_efficiency}(a) illustrates zero-shot LOGO error across all 8 hardware targets sorted by $d_{\text{shift}}$, while Figure \ref{fig:accuracy_efficiency}(b) depicts error growth under increasing hardware shift, demonstrating that SHIFT-GPU maintains stable error margins even under substantial architectural divergence.
+In contrast, our shift-adjusted conformal calibrator scales calibration quantiles proportionally to clipped Mahalanobis shift distance ($\gamma_{\text{shift}}=0.15, d_{\max}=5.0$), lifting overall two-sided empirical coverage to \textbf{77.0\%} and upper-bound SLA coverage to \textbf{86.8\%} (reaching 95.1\%--100.0\% on A100, H200, L4, L40S, and T4). Empirical coverage remains below nominal 90.0\% on H100 (65.6\%) and V100 (68.8\%) because distinct GPU populations violate strict exchangeability. Figure \ref{fig:accuracy_efficiency}(a) and (b) plot per-GPU LOGO errors across all three baselines ordered by $d_{\text{shift}}$.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig3_accuracy_efficiency_panel.png}
-\caption{Hardware generalization across unseen accelerator targets under microarchitectural covariate shift. (a) Leave-one-group-out (LOGO) ITL prediction MdAPE across 8 GPU architectures sorted by microarchitectural Mahalanobis shift distance $d_{\mathrm{shift}}$, comparing baseline XGBoost against SHIFT-GPU. (b) Generalization stability and empirical regression trends as a function of $d_{\mathrm{shift}}$, demonstrating SHIFT-GPU's robust physical anchoring on out-of-distribution hardware.}
+\caption{Hardware generalization across unseen accelerator targets under microarchitectural covariate shift. (a) Leave-one-group-out (LOGO) ITL prediction MdAPE across 8 GPU architectures ordered by Mahalanobis shift distance $d_{\mathrm{shift}}$, comparing Matched XGBoost, XGBoost + Roofline, and SHIFT-GPU. (b) Error scaling trends as a function of $d_{\mathrm{shift}}$.}
 \label{fig:accuracy_efficiency}
 \end{figure*}
 
 \subsection{E5: Active Few-Shot Hardware Profiling Benchmark}
-Table \ref{tab:few_shot_results} and Figure \ref{fig:performance_panel} evaluate few-shot adaptation performance as a function of profiling budget $k \in \{0, 1, 3, 5\}$ across four acquisition policies, evaluated strictly on untouched held-out workloads.
+Table \ref{tab:few_shot_results} and Figure \ref{fig:performance_panel} evaluate few-shot FiLM adaptation across profiling budgets $k \in \{0, 1, 3, 5\}$ and four acquisition strategies strictly on untouched test workloads ($D_{\text{test}} \setminus D_{\text{probe}}$), driving uncertainty and ROAA selection with the trained total ensemble standard deviation $\hat{\sigma}_{\text{total}}$.
 
 \begin{table}[h]
 \centering
-\caption{Few-shot profiling adaptation benchmark on unseen accelerators across measurement budgets ($k$) and acquisition policies. Evaluated strictly on untouched test samples ($D_{\text{test}} \setminus D_{\text{probe}}$).}
+\caption{Few-shot FiLM adaptation benchmark on unseen accelerators across measurement budgets ($k$) and acquisition policies. Evaluated strictly on untouched test samples ($D_{\text{test}} \setminus D_{\text{probe}}$).}
 \label{tab:few_shot_results}
 \resizebox{0.88\linewidth}{!}{%
 \begin{tabular}{llrr}
 \toprule
 \textbf{Profiling Budget ($k$)} & \textbf{Acquisition Policy} & \textbf{MdAPE (\%)} & \textbf{Pearson $r$} \\
 \midrule
-$k = 0$ (Zero-Shot) & Untrained Baseline & 7.02 & 0.995 \\
+$k = 0$ (Zero-Shot Ensemble) & Untrained Target Baseline & \textbf{6.83} & 0.995 \\
 \midrule
 \multirow{4}{*}{$k = 1$ (One-Shot)} 
-& Uniform Random & 7.59 & 0.995 \\
-& K-Means Feature Diversity & 9.16 & 0.993 \\
-& Maximal Predictive Uncertainty & 7.68 & 0.994 \\
-& Boundary Heuristic (ROAA) & 8.57 & 0.994 \\
+& Uniform Random & 7.62 & 0.997 \\
+& K-Means Feature Diversity & 10.13 & 0.997 \\
+& Maximal Predictive Uncertainty & 7.86 & 0.997 \\
+& Boundary Heuristic (ROAA) & 7.93 & 0.996 \\
 \midrule
 \multirow{4}{*}{$k = 3$ (Three-Shot)} 
-& Uniform Random & 7.20 & 0.995 \\
-& K-Means Feature Diversity & 8.20 & 0.994 \\
-& Maximal Predictive Uncertainty & 7.95 & 0.994 \\
-& Boundary Heuristic (ROAA) & 8.63 & 0.993 \\
+& Uniform Random & 7.37 & 0.997 \\
+& K-Means Feature Diversity & 7.78 & 0.997 \\
+& Maximal Predictive Uncertainty & 7.95 & 0.997 \\
+& Boundary Heuristic (ROAA) & 8.00 & 0.996 \\
 \midrule
 \multirow{4}{*}{$k = 5$ (Five-Shot)} 
-& \textbf{Uniform Random} & \textbf{6.60} & \textbf{0.996} \\
-& K-Means Feature Diversity & 9.69 & 0.992 \\
-& Maximal Predictive Uncertainty & 7.84 & 0.994 \\
-& Boundary Heuristic (ROAA) & 8.69 & 0.993 \\
+& Uniform Random & 7.38 & \textbf{0.997} \\
+& K-Means Feature Diversity & 7.56 & \textbf{0.997} \\
+& Maximal Predictive Uncertainty & 7.98 & \textbf{0.997} \\
+& Boundary Heuristic (ROAA) & 8.10 & 0.996 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-The empirical results confirm that zero-shot PICAN achieves a low MdAPE of 7.02\% without requiring any probing data on unseen accelerators. When calibration budgets are available, FiLM parameter adaptation refines workload representations. Notably, uniform random sampling achieves the lowest global latency prediction error across all budgets (7.59\% at $k=1$, 7.20\% at $k=3$, and reaching 6.60\% MdAPE at $k=5$). In contrast, the boundary-targeted heuristic (ROAA) yields higher global prediction error (8.57\%--8.69\%), performing worse than uniform random sampling across all budgets. This occurs because ROAA selectively queries configurations concentrated tightly around the SLA threshold $T_{\max}$; while this enriches local discrimination near the decision threshold, adapting FiLM solely on boundary configurations distorts global calibration across the broader workload space. Similarly, K-Means feature diversity yields 9.69\% MdAPE at $k=5$. These findings demonstrate that for few-shot adaptation across diverse serving workloads, simple uniform random profiling provides superior coverage and generalizability compared to boundary-biased heuristics. Furthermore, Figure \ref{fig:performance_panel}(b) confirms that SHIFT-GPU scales smoothly across model sizes from 0.5B to 72B parameters.
+Two clear empirical insights emerge from Table \ref{tab:few_shot_results}. First, because the 5-seed zero-shot ensemble already generalizes strongly across unseen hardware (\textbf{6.83\%} MdAPE), adapting the 128 FiLM parameters from only $k \in \{1, 3, 5\}$ shots slightly increases global MdAPE ($7.37\%$--$8.10\%$) while tightening tail linearity (Pearson $r$ improves from 0.995 to 0.997). Second, consistent across all tested budgets ($k \in \{1, 3, 5\}$), Uniform Random sampling outperforms K-Means diversity, maximal uncertainty, and the boundary-targeted ROAA heuristic ($7.37\%$--$7.62\%$ vs.\ $7.93\%$--$8.10\%$). Because ROAA concentrates shots tightly around a single latency threshold $T_{\max} = 35$~ms, updating global modulation vectors on boundary-skewed probes distorts predictions across the broader workload distribution. Consequently, we advise practitioners to deploy the zero-shot ensemble directly or use uniform random probing when larger calibration sets become available. Figure \ref{fig:performance_panel}(b) confirms smooth scaling across all 42 dense LLMs spanning \textbf{0.12B to 27B parameters}.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig4_computational_performance_panel.png}
-\caption{Active few-shot profiling adaptation and architectural parameter scalability. (a) Inter-token latency MdAPE as a function of measurement budget $k \in \{0, 1, 3, 5\}$ calibration shots across four acquisition policies (Uniform Random, K-Means Diversity, Max Uncertainty, and Regret-Optimal ROAA). (b) Architectural scalability showing measured median ITL vs. SHIFT-GPU predictions across 42 evaluated LLMs spanning 0.5B to 72B parameters.}
+\caption{Few-shot FiLM adaptation and architectural parameter scalability. (a) Inter-token latency MdAPE across budgets $k \in \{0, 1, 3, 5\}$ comparing Uniform Random, K-Means Diversity, Max Uncertainty, and Boundary Heuristic (ROAA). (b) Architectural scalability comparing measured median ITL vs.\ SHIFT-GPU predictions across 42 evaluated LLMs spanning 0.12B to 27B parameters.}
 \label{fig:performance_panel}
 \end{figure*}
 
 \subsection{E6: Production Hardware Recommendation and SLA Regret}
-We simulate a production cloud scheduler serving diverse LLM requests under an SLA latency threshold $T_{\max} = 35$ ms. Table \ref{tab:recommendations} and Figures \ref{fig:per_architecture_error}--\ref{fig:regret_panel} compare operational selection policies on identical cluster workloads.
+We simulate a production cloud scheduler serving diverse LLM requests under an SLA latency threshold $T_{\max} = 35$ ms. Table \ref{tab:recommendations} and Figures \ref{fig:per_architecture_error}--\ref{fig:regret_panel} compare seven operational selection policies evaluated on the same 125 cluster workloads using Eq. (\ref{eq:regret}) regret.
 
 \begin{table}[h]
 \centering
-\caption{Production hardware recommendation benchmark under 35 ms latency SLA. Evaluated across 125 unique LLM workloads over 8 candidate GPU architectures. SLA violations and abstentions are reported together with mean power.}
+\caption{Production hardware recommendation benchmark under 35 ms latency SLA. Evaluated across 125 unique LLM workloads over 8 candidate GPU architectures using Eq. (\ref{eq:regret}) regret ($\lambda = 5$).}
 \label{tab:recommendations}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lrrrrr}
 \toprule
 \textbf{Selection Policy} & \textbf{Accepted Workloads} & \textbf{Abstention (\%)} & \textbf{SLA Violations} & \textbf{Mean Power (W)} & \textbf{Mean Regret} \\
 \midrule
-Minimum TDP & 125 / 125 & 0.0 & 2 / 125 (1.6\%) & \textbf{106.0} & \textbf{2.8} \\
-Point Estimate (Matched XGBoost) & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 134.5 & 31.1 \\
-Point Estimate (SHIFT-GPU PICAN) & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 113.5 & 10.1 \\
-\textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & 115.9 & 12.5 \\
+Minimum TDP (Naive) & 125 / 125 & 0.0 & 44 / 125 (35.2\%) & \textbf{102.5} & 142.9 \\
+Minimum TDP + Roofline & 125 / 125 & 0.0 & 12 / 125 (9.6\%) & 106.3 & 65.4 \\
+Point Estimate (Matched XGBoost) & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 105.7 & \textbf{2.3} \\
+Point Estimate (XGBoost + Roofline) & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 105.7 & 4.7 \\
+Point Estimate (SHIFT-GPU PICAN) & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 115.2 & 11.8 \\
+\textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & 115.0 & 11.6 \\
 True Empirical Oracle & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 103.4 & 0.0 \\
 \bottomrule
 \end{tabular}%
@@ -481,97 +506,108 @@ True Empirical Oracle & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 103.4 & 0.0 \\
 
 \begin{table}[h]
 \centering
-\caption{Multi-SLA sensitivity benchmark evaluating cluster selection policies across varying latency thresholds $T_{\max} \in \{20, 25, 30, 35, 40\}$~ms on 125 unique LLM workloads.}
+\caption{Multi-SLA sensitivity benchmark evaluating cluster selection policies across latency thresholds $T_{\max} \in \{20, 25, 30, 35, 40\}$~ms on 125 unique LLM workloads.}
 \label{tab:sla_sensitivity}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{llrrrrr}
 \toprule
 \textbf{Latency SLA ($T_{\max}$)} & \textbf{Policy} & \textbf{Accepted Workloads} & \textbf{Abstain (\%)} & \textbf{SLA Violations} & \textbf{Mean Power (W)} & \textbf{Mean Regret} \\
 \midrule
-\multirow{5}{*}{$T_{\max} = 20$~ms} 
-& Minimum TDP & 125 / 125 & 0.0 & 3 / 125 (2.4\%) & 110.2 & 1.1 \\
-& Matched XGBoost Point & 125 / 125 & 0.0 & 3 / 125 (2.4\%) & 142.4 & 33.4 \\
-& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 8 / 125 (6.4\%) & 119.9 & 11.7 \\
-& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{123 / 125} & \textbf{1.6} & \textbf{0 / 123 (0.0\%)} & \textbf{121.3} & \textbf{13.1} \\
+\multirow{7}{*}{$T_{\max} = 20$~ms} 
+& Minimum TDP (Naive) & 125 / 125 & 0.0 & 64 / 125 (51.2\%) & 102.5 & 185.5 \\
+& Minimum TDP + Roofline & 125 / 125 & 0.0 & 31 / 125 (24.8\%) & 104.8 & 98.1 \\
+& Matched XGBoost Point & 125 / 125 & 0.0 & 2 / 125 (1.6\%) & 118.4 & 12.2 \\
+& XGBoost + Roofline Point & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 113.3 & 3.6 \\
+& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 3 / 125 (2.4\%) & 118.1 & 15.0 \\
+& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{121.1} & \textbf{11.4} \\
 & True Empirical Oracle & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 109.6 & 0.0 \\
 \midrule
-\multirow{5}{*}{$T_{\max} = 25$~ms} 
-& Minimum TDP & 125 / 125 & 0.0 & 2 / 125 (1.6\%) & 105.1 & 0.3 \\
-& Matched XGBoost Point & 125 / 125 & 0.0 & 3 / 125 (2.4\%) & 138.9 & 34.8 \\
-& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 2 / 125 (1.6\%) & 117.0 & 12.2 \\
-& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{121.0} & \textbf{16.1} \\
+\multirow{7}{*}{$T_{\max} = 25$~ms} 
+& Minimum TDP (Naive) & 125 / 125 & 0.0 & 57 / 125 (45.6\%) & 102.5 & 176.0 \\
+& Minimum TDP + Roofline & 125 / 125 & 0.0 & 11 / 125 (8.8\%) & 103.7 & 20.9 \\
+& Matched XGBoost Point & 125 / 125 & 0.0 & 3 / 125 (2.4\%) & 109.5 & 10.8 \\
+& XGBoost + Roofline Point & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 107.0 & 4.5 \\
+& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 3 / 125 (2.4\%) & 116.3 & 16.5 \\
+& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{117.1} & \textbf{12.3} \\
 & True Empirical Oracle & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 104.9 & 0.0 \\
 \midrule
-\multirow{5}{*}{$T_{\max} = 30$~ms} 
-& Minimum TDP & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 104.0 & 0.2 \\
-& Matched XGBoost Point & 125 / 125 & 0.0 & 3 / 125 (2.4\%) & 135.4 & 32.8 \\
-& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 115.4 & 11.6 \\
-& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{116.9} & \textbf{13.1} \\
+\multirow{7}{*}{$T_{\max} = 30$~ms} 
+& Minimum TDP (Naive) & 125 / 125 & 0.0 & 49 / 125 (39.2\%) & 102.5 & 161.1 \\
+& Minimum TDP + Roofline & 125 / 125 & 0.0 & 7 / 125 (5.6\%) & 104.6 & 29.1 \\
+& Matched XGBoost Point & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 106.3 & 4.8 \\
+& XGBoost + Roofline Point & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 105.9 & 4.5 \\
+& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 2 / 125 (1.6\%) & 115.6 & 15.4 \\
+& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{116.1} & \textbf{12.3} \\
 & True Empirical Oracle & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 103.8 & 0.0 \\
 \midrule
-\multirow{5}{*}{$T_{\max} = 35$~ms} 
-& Minimum TDP & 125 / 125 & 0.0 & 2 / 125 (1.6\%) & 106.0 & 2.8 \\
-& Matched XGBoost Point & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 134.5 & 31.1 \\
-& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 113.5 & 10.1 \\
-& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{115.9} & \textbf{12.5} \\
+\multirow{7}{*}{$T_{\max} = 35$~ms} 
+& Minimum TDP (Naive) & 125 / 125 & 0.0 & 44 / 125 (35.2\%) & 102.5 & 142.9 \\
+& Minimum TDP + Roofline & 125 / 125 & 0.0 & 12 / 125 (9.6\%) & 106.3 & 65.4 \\
+& Matched XGBoost Point & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 105.7 & 2.3 \\
+& XGBoost + Roofline Point & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 105.7 & 4.7 \\
+& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 115.2 & 11.8 \\
+& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{115.0} & \textbf{11.6} \\
 & True Empirical Oracle & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 103.4 & 0.0 \\
 \midrule
-\multirow{5}{*}{$T_{\max} = 40$~ms} 
-& Minimum TDP & 125 / 125 & 0.0 & 3 / 125 (2.4\%) & 108.0 & 6.5 \\
-& Matched XGBoost Point & 125 / 125 & 0.0 & 8 / 125 (6.4\%) & 131.8 & 35.6 \\
-& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 1 / 125 (0.8\%) & 113.1 & 9.9 \\
-& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{114.1} & \textbf{10.7} \\
+\multirow{7}{*}{$T_{\max} = 40$~ms} 
+& Minimum TDP (Naive) & 125 / 125 & 0.0 & 39 / 125 (31.2\%) & 102.5 & 119.2 \\
+& Minimum TDP + Roofline & 125 / 125 & 0.0 & 11 / 125 (8.8\%) & 105.7 & 49.6 \\
+& Matched XGBoost Point & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 105.5 & 2.2 \\
+& XGBoost + Roofline Point & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 105.5 & 2.1 \\
+& SHIFT-GPU PICAN Point & 125 / 125 & 0.0 & 2 / 125 (1.6\%) & 114.1 & 16.0 \\
+& \textbf{SHIFT-GPU (Risk-Calibrated)} & \textbf{125 / 125} & \textbf{0.0} & \textbf{0 / 125 (0.0\%)} & \textbf{115.2} & \textbf{11.8} \\
 & True Empirical Oracle & 125 / 125 & 0.0 & 0 / 125 (0.0\%) & 103.4 & 0.0 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-As summarized in Table \ref{tab:recommendations}, under the baseline $T_{\max} = 35$~ms SLA, both SHIFT-GPU point prediction and calibrated prediction observe 0 violations out of 125 accepted workloads (0.0\%). In this relaxed regime, the calibrated policy uses 115.9~W on average compared to 113.5~W for the point predictor, incurring a modest +2.4~W power buffer to account for tail uncertainty. Matched XGBoost point prediction incurs 1 violation (0.8\%) and consumes 134.5~W (mean regret 31.1) when ranked strictly by its own predicted power $\hat{P}_{\text{xgb}}$, while Minimum TDP incurs 2 violations (1.6\%) at 106.0~W.
+As summarized in Table \ref{tab:recommendations}, under $T_{\max} = 35$~ms, non-learning heuristics fail severely: naive Minimum TDP incurs 44 / 125 SLA violations (35.2\%, mean regret 142.9), while augmenting Minimum TDP with the deterministic Roofline filter still leaves 12 / 125 violations (9.6\%, mean regret 65.4). Both SHIFT-GPU point estimation (115.2~W) and risk-calibrated SHIFT-GPU (115.0~W) record 0 / 125 violations (0.0\%), whereas XGBoost + Roofline point selection incurs 1 / 125 violation (0.8\%). Matched XGBoost point prediction achieves 0 violations specifically at 35~ms with 105.7~W due to slightly tighter zero-shot power estimation (12.52\% vs.\ 13.44\% Power MdAPE), which ranks lower-TDP feasible candidates closer to the True Oracle (103.4~W).
 
-To evaluate whether conformal calibration provides tangible operational benefits across diverse cluster conditions, Table \ref{tab:sla_sensitivity} benchmarks selection policies across varying latency thresholds $T_{\max} \in \{20, 25, 30, 35, 40\}$~ms. Under tight latency constraints, point estimation suffers substantial SLA infractions due to tail latency underestimation: at $T_{\max} = 20$~ms, SHIFT-GPU point prediction incurs 8 violations out of 125 accepted workloads (6.4\%). In stark contrast, risk-calibrated SHIFT-GPU achieves \textbf{0 violations out of 123 accepted workloads (0.0\%)}, prudently abstaining on 2 workloads where no accelerator can reliably satisfy the tight constraint within the empirical latency bound. Similarly, at $T_{\max} = 25$~ms and $30$~ms, point prediction triggers 1.6\% (2 / 125) and 0.8\% (1 / 125) violations, while calibrated SHIFT-GPU maintains 0 violations (0.0\%) with a modest power buffer (+4.0~W at 25~ms, +1.5~W at 30~ms). At $T_{\max} = 40$~ms, matched XGBoost point prediction suffers 8 violations (6.4\%) and PICAN point prediction incurs 1 violation (0.8\%), whereas calibrated SHIFT-GPU records 0 violations. This establishes that calibration serves as a principled operational risk hedge: under relaxed SLAs it operates with a minor power buffer, while under tight or boundary constraints it actively shields clusters from latency SLA breaches.
+To examine robustness under tightening constraints, Table \ref{tab:sla_sensitivity} sweeps $T_{\max} \in \{20, 25, 30, 35, 40\}$~ms. Across the stricter thresholds, every uncalibrated point policy breaches SLA bounds: Matched XGBoost incurs 2 violations (1.6\%) at 20~ms, 3 (2.4\%) at 25~ms, and 1 (0.8\%) at 30~ms; XGBoost + Roofline incurs 1 violation (0.8\%) at 25, 30, and 35~ms; and SHIFT-GPU PICAN Point incurs 2--3 violations (1.6\%--2.4\%) at 20, 25, 30, and 40~ms. Crucially, \textbf{risk-calibrated SHIFT-GPU is the sole policy to maintain 0 / 125 (0.0\%) SLA violations with 0 abstentions across all five SLA thresholds}, adding a modest risk-hedging power margin (+3.0~W at 20~ms, +0.8~W at 25~ms, +0.5~W at 30~ms relative to PICAN Point) while lower-bounding cumulative operational regret below Matched XGBoost under the tightest 20~ms constraint (mean regret 11.4 vs.\ 12.2; Figure \ref{fig:regret_panel}(a)).
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig5_per_architecture_error_panel.png}
-\caption{Empirical relative error distributions across modern GPU microarchitectural families on a log scale: (a) Ampere (A100 and A30), (b) Ada Lovelace (L40S and L4), and (c) Hopper (H100 and H200). Diamonds denote distribution means. SHIFT-GPU dramatically truncates heavy error tails and prevents catastrophic out-of-distribution mispredictions.}
+\caption{Empirical relative error distributions across NVIDIA GPU microarchitectural families on a log scale comparing Matched XGBoost, XGBoost + Roofline, and SHIFT-GPU (5-seed PICAN): (a) Ampere (A100 and A30), (b) Ada Lovelace (L40S and L4), and (c) Hopper (H100 and H200). Diamonds denote distribution means.}
 \label{fig:per_architecture_error}
 \end{figure*}
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig6_cumulative_regret_panel.png}
-\caption{Cumulative operational deployment regret over serving request streams for (a) Ampere, (b) Ada Lovelace, and (c) Hopper under a 35 ms latency SLA. Uncalibrated Minimum TDP and Point Estimate policies accumulate severe SLA violation penalties, whereas Risk-Calibrated SHIFT-GPU eliminates violations, maintaining a steady, bounded regret trajectory.}
+\caption{Cumulative operational deployment regret under Eq. (\ref{eq:regret}) over 125 evaluation workloads for (a) $T_{\max} = 20$~ms, (b) $T_{\max} = 30$~ms, and (c) $T_{\max} = 35$~ms. Uncalibrated Minimum TDP (Roofline) accumulates severe SLA violation penalties, while uncalibrated point predictors exhibit intermittent regret jumps from SLA breaches; Risk-Calibrated SHIFT-GPU maintains a smooth, violation-free trajectory across all thresholds.}
 \label{fig:regret_panel}
 \end{figure*}
 
 \subsection{E7: Systematic Ablation Study}
-Table \ref{tab:ablations} and Figure \ref{fig:summary_heatmap} detail systematic ablations isolating the architectural contributions of each component in SHIFT-GPU, retrained independently on identical folds.
+Table \ref{tab:ablations} and Figure \ref{fig:summary_heatmap} detail systematic ablations isolating the architectural and physics-informed contributions of SHIFT-GPU, retrained independently across the identical 5-seed LOGO protocol.
 
 \begin{table}[h]
 \centering
-\caption{Systematic ablation study isolating architectural and algorithmic components of SHIFT-GPU. All variants retrained independently across identical folds.}
+\caption{Systematic ablation study isolating architectural and algorithmic components of SHIFT-GPU. All neural variants trained with the identical 5-seed Gaussian NLL protocol across the 8 LOGO folds.}
 \label{tab:ablations}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lrrr}
 \toprule
-\textbf{Model Architecture / Variant} & \textbf{ITL MdAPE (\%)} & \textbf{Empirical Coverage (\%)} & \textbf{SLA Violation Rate} \\
+\textbf{Model Architecture / Variant} & \textbf{ITL MdAPE (\%)} & \textbf{Upper Coverage (\%)} & \textbf{SLA Violation Rate (35 ms)} \\
 \midrule
-\textbf{Full Proposed SHIFT-GPU} & \textbf{7.02} & \textbf{86.8} & \textbf{0 / 125 (0.0\%)} \\
-Ablation A: Without Roofline Base (Pure Attention) & 20.59 & 80.1 & 2 / 125 (1.6\%) \\
-Ablation B: Without Cross-Attention (Flat MLP) & 10.57 & 77.0 & 0 / 125 (0.0\%) \\
-Baseline C: Matched XGBoost Rerun \citep{fadel2026wattgpu} & 12.16 & 82.0 & 1 / 125 (0.8\%) \\
+\textbf{Full Proposed SHIFT-GPU (PICAN + Roofline + Conformal)} & \textbf{6.83} & \textbf{86.8} & \textbf{0 / 125 (0.0\%)} \\
+Ablation A: Without Physics Roofline (Pure Attention) & 31.70 & 90.9 & 5 / 125 (4.0\%) \\
+Ablation B: Without Cross-Attention (Flat MLP + Roofline) & 6.42 & 87.4 & 1 / 125 (0.8\%) \\
+Baseline C: XGBoost + Roofline & 10.68 & 83.8 & 1 / 125 (0.8\%) \\
+Baseline D: Matched XGBoost \citep{fadel2026wattgpu} & 11.98 & 84.5 & 0 / 125 (0.0\%) \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-Ablating the deterministic microarchitectural Roofline base (Ablation A) causes ITL prediction error to surge from 7.02\% to 20.59\% (+193\% relative error increase) and drives SLA violations up to 1.6\% (2 / 125), demonstrating that physical inductive anchoring is essential to prevent unconstrained neural networks from extrapolating unphysical execution times on unseen hardware. Replacing the bipartite architecture with a flat concatenated MLP (Ablation B) increases error from 7.02\% to 10.57\% (+50.6\% relative increase). As qualified in Section \ref{sec:method}, because pairwise training uses singleton hardware tokens ($L_k = 1$), the softmax attention weight is mathematically degenerate ($1.0$). Therefore, this empirical advantage arises from the structured separation of workload and hardware encoders, residual skip connections, and layer normalization, rather than dynamic query-key attention filtering. Baseline C (our matched XGBoost rerun) achieves 12.16\% MdAPE, confirming that SHIFT-GPU's physics-guided formulation outperforms standard gradient-boosted decision trees by 42.3\% on unseen hardware.
+Ablating the deterministic microarchitectural Roofline base (Ablation A) causes zero-shot ITL prediction error to surge from 6.83\% to 31.70\% (+364\% relative error increase, $4.64\times$) and elevates SLA violations to 4.0\% (5 / 125), confirming that physical inductive anchoring is essential to prevent unconstrained neural models from extrapolating unphysical latencies on unfamiliar hardware. Replacing the bipartite cross-attention fusion with a flat concatenated MLP over the same Roofline prior and NLL training (Ablation B) yields 6.42\% MdAPE (slightly lower median error than PICAN's 6.83\%, well within the single-seed spread $\pm 0.75\%$), while incurring 1 / 125 (0.8\%) SLA violation compared to 0 / 125 (0.0\%) for SHIFT-GPU. As proved in Section \ref{sec:method}, because pairwise training uses singleton hardware tokens ($L_k = 1$), softmax attention weights equal $1.0$; consequently, both continuous neural Roofline-residual models generalize markedly better than axis-aligned trees, cutting LOGO error by 36.1\%--39.9\% relative to XGBoost + Roofline (10.68\% MdAPE, 0.8\% violations) and by 43.0\%--46.4\% relative to Matched XGBoost (11.98\% MdAPE). This directly isolates continuous neural Roofline-residual modeling as the key enabler of cross-GPU extrapolation.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig7_summary_heatmap.png}
-\caption{Systematic component ablation and production recommendation trade-offs. (a) Systematic component ablation on zero-shot LOGO MdAPE (\%), demonstrating that removing the physics Roofline base (Ablation A) surges error to 20.59\% (+193\% relative increase), while removing cross-attention (Ablation B) increases error to 10.57\%. (b) Production hardware recommendation frontier comparing mean cluster power draw (Watts) versus SLA violation rate (\%) under a 35 ms latency constraint.}
+\caption{Systematic component ablation and production recommendation trade-offs. (a) Zero-shot LOGO ITL MdAPE (\%) across five variants, showing that removing the physics Roofline base (Ablation A) surges error to 31.70\%, whereas both neural Roofline-residual models (6.83\% and 6.42\%) substantially outperform XGBoost + Roofline (10.68\%) and Matched XGBoost (11.98\%). (b) Production hardware selection frontier comparing mean cluster power draw (Watts) against SLA violation rate (\%) at $T_{\max} = 35$~ms.}
 \label{fig:summary_heatmap}
 \end{figure*}
 
@@ -582,60 +618,35 @@ Ablating the deterministic microarchitectural Roofline base (Ablation A) causes 
 A common misconception in AI infrastructure is treating instantaneous GPU power draw (Watts) as synonymous with energy consumption (Joules). In autoregressive inference, total energy per request is the time integral of power: $E = \int_0^T P(t) dt \approx P_{\text{mean}} \cdot T_{\text{total}}$. A low-TDP accelerator (e.g., Tesla T4 at 70 W) operating at high latency may consume significantly more total energy than an advanced accelerator (e.g., L40S at 350 W) that finishes the inference burst in a fraction of the time. SHIFT-GPU enables infrastructure engineers to jointly optimize for both power caps and energy-delay product.
 
 \subsection{Integration into Cloud Schedulers (Kubernetes / Slurm)}
-SHIFT-GPU can be seamlessly integrated into existing cloud resource orchestrators as a lightweight admission controller, complementing node-level power coordination policies such as PowerCoord \citep{suscom_powercoord2020} and cloud workflow managers \citep{suscom_kumar2022, suscom_malekloo2018}. Furthermore, by explicitly bounding tail latency risk through conformal calibration, SHIFT-GPU guards against the queue instability and latency explosions analytically established by Yao et al. \citep{suscom_tradeoffs2025}. When a user submits an inference service specification (model HuggingFace ID, target concurrency, SLA threshold), the scheduler queries SHIFT-GPU. If the target GPU family is familiar, SHIFT-GPU returns zero-shot recommendations in under 5 milliseconds. If the cluster introduces unfamiliar accelerators ($d_{\text{shift}} > 3.0$), the scheduler automatically triggers a 3-shot ROAA profiling micro-job before onboarding the workload, reinforcing SLA compliance with negligible overhead.
+SHIFT-GPU can be seamlessly integrated into existing cloud resource orchestrators as a lightweight admission controller, complementing node-level power coordination policies such as PowerCoord \citep{suscom_powercoord2020} and cloud workflow managers \citep{suscom_kumar2022, suscom_malekloo2018}. Furthermore, by explicitly bounding tail latency risk through conformal calibration, SHIFT-GPU guards against the queue instability and latency explosions analytically established by Yao et al. \citep{suscom_tradeoffs2025}. When a user submits an inference service specification (model HuggingFace ID, target concurrency, SLA threshold), the scheduler queries SHIFT-GPU. If the target GPU family is well covered by historical telemetry, SHIFT-GPU returns zero-shot recommendations in under 5 milliseconds using the 5-seed ensemble. When unfamiliar accelerators are introduced ($d_{\text{shift}} > 3.0$), the scheduler automatically widens conformal admission margins via Mahalanobis scaling and can optionally run a uniform random probing micro-job to log empirical target behavior once larger calibration batches are available.
 
 \section{Threats to Validity and Limitations}
 \label{sec:threats}
 
 \textbf{Calibration under hardware shift:}
-Split conformal prediction provides finite-sample marginal coverage of
-at least $1-\alpha$ under exchangeability of the calibration and test
-examples. In our leave-one-GPU-out evaluation, calibration and test
-examples come from different GPU populations, so exchangeability
-cannot be assumed. The measured coverage was 86.8\% for the upper
-latency bound and 75.4\% for the two-sided interval, both below the
-nominal 90\% target. The Mahalanobis adjustment is an empirical
-heuristic. A positive hardware distance describes a difference in
-hardware features and does not by itself establish a violation of
-exchangeability. Target-GPU profiling may help calibration, but
-the current experiments do not establish that a small profiling
-budget restores nominal coverage.
+Split conformal prediction provides finite-sample marginal coverage of at least $1-\alpha$ under exchangeability of calibration and test examples. In our leave-one-GPU-out evaluation, calibration and test samples come from distinct GPU populations, so strict exchangeability cannot be assumed. Relative to uncalibrated Gaussian intervals (69.5\% two-sided, 82.8\% upper), shift-adjusted conformal calibration raises measured coverage to 86.8\% for the upper latency bound and 77.0\% for the two-sided interval, both still slightly below the nominal 90\% target due to extreme domain shifts on architectures such as H100 NVL (65.6\%) and V100 (68.8\%). The Mahalanobis adjustment is an empirical heuristic, and establishing finite-sample coverage guarantees under non-exchangeable hardware shift remains open.
 
 \textbf{Workload-hardware attention dynamics:}
-In our pairwise training and inference formulation, each input sample comprises a single workload specification $x$ and a single candidate accelerator $g$. Because the key sequence length is unity ($L_k = 1$), the softmax attention distribution is trivially concentrated on the single available hardware token ($\mathrm{softmax}(s) = 1.0$), rendering the query-key dot products non-operational for single-pair inference. The 33.6\% relative error reduction observed in Ablation B (7.02\% for PICAN vs.\ 10.57\% for a flat concatenated MLP) is therefore attributable to the decoupled dual-encoder inductive bias, residual skip connections, and layer-normalized feature fusion, rather than workload-dependent attention weighting over diverse hardware tokens. Extending PICAN to joint multi-GPU list-wise encoding---where a workload query attends simultaneously over a sequence of $N$ candidate accelerators---represents a promising direction to realize true data-dependent attention routing.
+In our pairwise training and inference formulation, each input sample comprises a single workload specification $x$ and a single candidate accelerator $g$. Because the key sequence length is unity ($L_k = 1$), the softmax attention distribution is mathematically degenerate ($\mathrm{softmax}(s) = 1.0$), rendering query-key dot products non-operational for single-pair inference. In Ablation B, both decoupled PICAN (6.83\% MdAPE, 0.0\% SLA violations at 35~ms) and the flat concatenated MLP over the same Roofline prior (6.42\% MdAPE, 0.8\% SLA violations) fall within single-seed variation ($\pm 0.75\%$), whereas both dramatically outperform Roofline-augmented XGBoost (10.68\%) and raw XGBoost (11.98\%). The primary source of cross-GPU accuracy is therefore smooth neural Roofline-residual modeling rather than single-token cross-attention. Extending PICAN to joint list-wise multi-GPU encoding---where a workload query attends simultaneously over $N > 1$ candidate accelerators---remains a promising direction to unlock data-dependent attention routing.
+
+\textbf{Power prediction and conservative hedging:}
+Zero-shot power prediction exhibits higher relative variance on unfamiliar GPUs than latency because TDP scaling interacts non-linearly with per-SM boost clocks and memory utilization. Across LOGO evaluation, 5-seed PICAN records 13.44\% Power MdAPE compared to 12.52\% for Matched XGBoost (Table \ref{tab:logo_results}), because tree splits closely track static TDP regimes. Consequently, under relaxed 35~ms constraints, Matched XGBoost selects slightly lower-power configurations (105.7~W vs.\ 115.0~W), while risk-calibrated SHIFT-GPU trades this conservative +9.3~W margin for universal zero-violation reliability (0 / 125 across all SLA bounds from 20~ms to 40~ms). Jointly calibrating power bounds or adopting physics-informed thermal models for power residuals warrants future study.
 
 \textbf{Few-shot active acquisition:}
-While we formulated a boundary-targeted acquisition heuristic (ROAA) to explore threshold configurations, empirical results showed that uniform random sampling achieved lower global regression error across all tested budgets ($k \in \{1, 3, 5\}$). Biasing few-shot measurements toward decision thresholds does not improve global latency estimation across the broader workload space. Identifying acquisition functions that simultaneously minimize boundary classification risk and global regression error remains an open problem.
+While we formulated a boundary-targeted acquisition heuristic (ROAA) to probe near-threshold configurations, empirical results showed that uniform random sampling achieved lower global regression error across all tested budgets ($k \in \{1, 3, 5\}$; 7.37\%--7.62\% vs.\ 7.93\%--8.10\% MdAPE), and the zero-shot 5-seed ensemble already achieved lower global median error (6.83\%). Updating FiLM affine adapters on a handful of non-uniform or boundary-skewed shots perturbs global feature calibration across the broader workload space. Identifying acquisition criteria and regularization schedules that improve global adaptation at ultra-low shot counts remains an open problem.
 
 \textbf{Hardware scope:}
-The benchmark covers eight NVIDIA GPU models. Holding out one GPU
-model can leave other members of its architecture family in training.
-Generalization to unseen architecture families and other accelerator
-vendors remains to be evaluated.
+The benchmark covers eight NVIDIA GPU models. Holding out one GPU model can leave other members of its architecture family in training. Generalization to unseen architecture families and other accelerator vendors remains to be evaluated.
 
 \textbf{Software stack:}
-The benchmark uses vLLM with FP16/BF16 precision. External validity
-across serving runtimes and lower-precision formats remains to be
-evaluated.
+The benchmark uses vLLM with FP16/BF16 precision. External validity across serving runtimes and lower-precision formats remains to be evaluated.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-We presented SHIFT-GPU, a framework for predicting LLM inference
-latency and selecting accelerators under latency and power constraints.
-In leave-one-GPU-out evaluation across 4,163 benchmark configurations,
-SHIFT-GPU achieved 7.02\% median absolute percentage error for
-inter-token latency, compared with 12.16\% for matched XGBoost,
-a 42.3\% relative reduction.
+We presented SHIFT-GPU, a physics-guided, risk-calibrated framework for predicting LLM inference latency and selecting energy-efficient accelerators under hardware covariate shift. Under strict NaN-blinded leave-one-GPU-out evaluation across 4,163 benchmark configurations spanning 42 LLMs (0.12B--27B parameters) and 8 NVIDIA GPUs, SHIFT-GPU reduced inter-token latency MdAPE from 11.98\% (matched XGBoost) and 10.68\% (Roofline-augmented XGBoost) down to \textbf{6.83\%} (43.0\% and 36.1\% relative reductions), and achieved \textbf{6.21\% MdAPE} under 42-model leave-one-LLM-out evaluation. Systematic ablations isolate smooth neural Roofline-residual modeling as the central driver of unseen-GPU generalization, showing a 4.64$\times$ error surge to 31.70\% when removing the Roofline prior and substantial improvements over tree-based Roofline residuals.
 
-In offline replay at a 35\,ms latency threshold, both the point
-predictor and the calibrated SHIFT-GPU policy recorded zero violations
-across 125 accepted workloads. At 20\,ms, the point predictor recorded
-8 violations among 125 accepted workloads. The calibrated policy
-recorded zero among 123 accepted workloads, abstained on two, and
-used 1.36\,W more mean power among accepted workloads. These results
-quantify the trade-off between latency risk, admission, and power
-on the evaluated benchmark.
+In production cluster selection across five latency SLAs ($T_{\max} \in \{20, 25, 30, 35, 40\}$~ms), risk-calibrated SHIFT-GPU was the only evaluated policy to achieve \textbf{0 violations across all 125 workloads (0.0\%, 0 abstentions)} at every threshold (mean power 115.0~W at 35~ms and 121.1~W at 20~ms), whereas naive Minimum TDP incurred 31.2\%--51.2\% SLA violations, Roofline Minimum TDP incurred 5.6\%--24.8\%, and uncalibrated point predictors incurred up to 2.4\% violations under strict constraints. Combined with our transparent empirical characterization of $L_k=1$ attention equivalence and few-shot FiLM probing, SHIFT-GPU provides a rigorously validated, reproducible foundation for sustainable LLM infrastructure scheduling.
 
 \section*{CRediT Authorship Contribution Statement}
 \textbf{Jason Pandian:} Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data Curation, Writing - Original Draft, Writing - Review \& Editing, Visualization, Supervision, Project administration, Resources.
@@ -644,7 +655,7 @@ on the evaluated benchmark.
 The author declares that he has no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
 
 \section*{Data and Code Availability}
-The complete source code, trained model checkpoints, experiment execution scripts, and reproduction pipelines supporting the findings of this study are available from the corresponding author upon reasonable request. Upon acceptance of the manuscript, the complete codebase will be made publicly accessible in an open-source repository.
+The complete source code, deterministic Roofline engine, 5-seed evaluation pipelines, NaN-blinded verification checks, and figure/table generation scripts supporting all findings in this study are publicly available at \url{https://github.com/PandiaJason/SHIFT-GPU}. The underlying empirical profiling dataset builds upon WattGPU \citep{fadel2026wattgpu}.
 
 \section*{Author Biographies}
 
